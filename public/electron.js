@@ -1,6 +1,6 @@
-const { app, BrowserWindow, Menu, ipcMain } = require('electron');
-const path = require('path');
-const isDev = require('electron-is-dev');
+import {app, BrowserWindow, Menu, ipcMain} from 'electron'
+import path from 'path'
+import isDev from 'electron-is-dev'
 
 let mainWindow;
 

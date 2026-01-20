@@ -2,7 +2,8 @@
   "name": "my-v0-project",
   "version": "0.1.0",
   "private": true,
-  "main": "dist/electron/main.js",
+  "type": "module",
+  "main": "./src/electron/main.js",
   "homepage": "./",
   "scripts": {
     "dev": "concurrently \"cross-env SKIP_PREFLIGHT_CHECK=true react-app-rewired start\" \"wait-on http://localhost:3000 && electron .\"",
