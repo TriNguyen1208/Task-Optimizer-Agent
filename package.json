@@ -6,11 +6,11 @@
   "main": "./src/electron/main.js",
   "homepage": "./",
   "scripts": {
-    "dev": "concurrently \"cross-env SKIP_PREFLIGHT_CHECK=true react-app-rewired start\" \"wait-on http://localhost:3000 && electron .\"",
+    "dev:website": "concurrently \"cross-env SKIP_PREFLIGHT_CHECK=true react-app-rewired start\" \"wait-on http://localhost:3000\"",
     "build": "cross-env SKIP_PREFLIGHT_CHECK=true react-app-rewired build && electron-builder",
     "start": "electron .",
     "lint": "eslint .",
-    "electron-dev": "electron .",
+    "dev:app": "electron .",
     "react-start": "cross-env SKIP_PREFLIGHT_CHECK=true react-app-rewired start",
     "react-build": "cross-env SKIP_PREFLIGHT_CHECK=true react-app-rewired build"
   },
@@ -55,6 +55,7 @@
     "next": "16.0.10",
     "next-themes": "^0.4.6",
     "react": "19.2.0",
+    "react-datepicker": "^9.1.0",
     "react-day-picker": "9.8.0",
     "react-dom": "19.2.0",
     "react-hook-form": "^7.60.0",

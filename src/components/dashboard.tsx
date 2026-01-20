@@ -13,7 +13,8 @@ interface Task {
   startDate: string
   endDate: string
   deadline: string
-  status: 'In Progress' | 'Pending' | 'Not Started'
+  status: 'In Progress' | 'Pending' | 'Not Started',
+  timeLeft: string,
   path?: string
 }
 
@@ -28,6 +29,7 @@ export default function Dashboard() {
       endDate: '2024-02-15',
       deadline: '2024-02-15',
       status: 'In Progress',
+      timeLeft: '3 hours, 2 minutes',
       path: '/docs/design-system',
     },
     {
@@ -39,6 +41,7 @@ export default function Dashboard() {
       endDate: '2024-02-20',
       deadline: '2024-02-20',
       status: 'Pending',
+      timeLeft: '3 hours, 2 minutes',
       path: 'https://api.example.com/docs',
     },
     {
@@ -50,6 +53,7 @@ export default function Dashboard() {
       endDate: '2024-02-25',
       deadline: '2024-02-25',
       status: 'Not Started',
+      timeLeft: '3 hours, 2 minutes',
       path: '/tests/suite.json',
     },
   ])
@@ -102,9 +106,14 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 gap-6">
         {/* Tasks List */}
         <Card className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-foreground">Tasks List</h2>
-            <button onClick={() => setShowAddModal(true)} className="p-2 bg-primary text-primary-foreground hover:opacity-90">
+          <div className="flex items-center justify-between mb-3">
+            <div className='flex flex-col gap-4'>
+              <h2 className="text-xl font-bold text-foreground">Tasks List</h2>
+              <span className="text-muted-foreground text-sm font-bold">
+                Current Date: {new Date().toLocaleDateString('en-GB')} {/* en-GB là chuẩn Ngày/Tháng/Năm */}
+              </span>
+            </div>
+            <button onClick={() => setShowAddModal(true)} className="p-2 bg-primary text-primary-foreground hover:opacity-90 rounded-md">
               <Plus className="w-5 h-5" />
             </button>
           </div>
@@ -116,7 +125,8 @@ export default function Dashboard() {
                 <tr className="border-b border-border">
                   <th className="text-left py-3 px-4 font-semibold text-foreground">Name</th>
                   <th className="text-left py-3 px-4 font-semibold text-foreground">Deadline</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Status</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground">Working time</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground">Time left</th>
                   <th className="text-center py-3 px-4 font-semibold text-foreground">Finished</th>
                 </tr>
               </thead>
@@ -131,18 +141,9 @@ export default function Dashboard() {
                     </td>
                     <td className="py-3 px-4 text-foreground">{task.deadline}</td>
                     <td className="py-3 px-4">
-                      <span
-                        className={`inline-block px-3 py-1 text-sm font-medium ${
-                          task.status === 'In Progress'
-                            ? 'bg-blue-900 text-blue-200'
-                            : task.status === 'Pending'
-                              ? 'bg-yellow-900 text-yellow-200'
-                              : 'bg-gray-800 text-gray-300'
-                        }`}
-                      >
-                        {task.status}
-                      </span>
+                      {task.workingHours}
                     </td>
+                    <td className="py-3 px-4 text-foreground">{task.timeLeft}</td>
                     <td className="py-3 px-4 text-center">
                       <input
                         type="checkbox"
@@ -174,9 +175,9 @@ export default function Dashboard() {
             {chatMessages.map((msg) => (
               <div
                 key={msg.id}
-                className={`p-3 max-w-xs ${
+                className={`p-3 max-w-xs rounded-md ${
                   msg.sender === 'user'
-                    ? 'bg-primary text-primary-foreground ml-auto'
+                    ? 'bg-primary text-primary-foreground ml-auto mr-4'
                     : 'bg-secondary text-foreground mr-auto'
                 }`}
               >
@@ -191,12 +192,12 @@ export default function Dashboard() {
               placeholder="Ask something..."
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              className="flex-1 px-3 py-2 bg-input border border-border text-foreground placeholder-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+              className="flex-1 px-3 py-2 bg-input border border-border text-foreground placeholder-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
             />
             <button
               onClick={handleSendMessage}
-              className="p-2 bg-primary text-primary-foreground hover:opacity-90"
+              className="p-2 bg-primary text-primary-foreground hover:opacity-90 rounded-md"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -204,7 +205,11 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <TaskDetailModal task={selectedTask} onClose={() => setSelectedTask(null)} onSave={handleSaveTask} />
+      <TaskDetailModal 
+        task={selectedTask} 
+        onClose={() => setSelectedTask(null)} 
+        onSave={(updatedTask) => handleSaveTask(updatedTask as Task)} 
+      />
       <TaskDetailModal 
         task={showAddModal ? { id: Date.now(), name: '', description: '', workingHours: 0, startDate: '', endDate: '', deadline: '', status: 'Not Started', path: '' } : null} 
         onClose={() => setShowAddModal(false)} 

@@ -1,9 +1,11 @@
 'use client';
 
-import React from "react"
+import React, { useEffect } from "react"
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { Card } from './ui/card'
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 interface Task {
   id: number
@@ -24,18 +26,25 @@ interface TaskDetailModalProps {
   isNew?: boolean
 }
 
-export default function TaskDetailModal({ task, onClose, onSave, isNew }: TaskDetailModalProps) {
+export default function TaskDetailModal({ task, onClose, onSave, isNew = false }: TaskDetailModalProps) {
   const [formData, setFormData] = useState<Task>(task || {
     id: 0,
     name: '',
     description: '',
-    workingHours: 0,
+    workingHours: 0, // Lưu ý: Nếu muốn nhập "48:00", hãy đổi kiểu dữ liệu thành string
     startDate: '',
     endDate: '',
     path: '',
     status: 'Not Started',
     deadline: '',
-  })
+  });
+
+  // 2. Sau đó mới dùng useEffect để cập nhật khi props 'task' thay đổi
+  useEffect(() => {
+    if (task) {
+      setFormData(task as Task);
+    }
+  }, [task]); // Đưa vào mảng [task]
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -51,6 +60,7 @@ export default function TaskDetailModal({ task, onClose, onSave, isNew }: TaskDe
     }
     onClose()
   }
+  const [startDate, setStartDate] = useState(new Date());
 
   if (!task) return null
 
@@ -61,7 +71,7 @@ export default function TaskDetailModal({ task, onClose, onSave, isNew }: TaskDe
           <h2 className="text-2xl font-bold text-foreground">{isNew ? 'Add New Task' : 'Task Details'}</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-secondary transition-colors"
+            className="p-2 hover:bg-secondary transition-colors rounded-md"
           >
             <X className="w-5 h-5" />
           </button>
@@ -69,13 +79,21 @@ export default function TaskDetailModal({ task, onClose, onSave, isNew }: TaskDe
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Task Name</label>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Task Name <span className="text-red-500">*</span>
+            </label>
+            
             <input
               type="text"
               name="name"
+              required
+              placeholder="Nhập tên công việc..."
               value={formData.name}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-border bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className="peer w-full px-4 py-2 border border-border bg-input text-foreground 
+                        focus:outline-none focus:ring-2 focus:ring-primary rounded-xl
+                        invalid:border-red-500/50
+                        transition-all"
             />
           </div>
 
@@ -86,64 +104,43 @@ export default function TaskDetailModal({ task, onClose, onSave, isNew }: TaskDe
               value={formData.description}
               onChange={handleChange}
               rows={4}
-              className="w-full px-4 py-2 border border-border bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              className="w-full px-4 py-2 border border-border bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none rounded-md"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Path / URL</label>
-            <input
-              type="text"
-              name="path"
-              value={formData.path || ''}
-              onChange={handleChange}
-              placeholder="https://example.com or /path/to/file"
-              className="w-full px-4 py-2 border border-border bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Working Hours</label>
+          <div className="grid grid-cols-2 gap-4 items-end"> {/* Thêm items-end để chân 2 input bằng nhau nếu label dài ngắn khác nhau */}
+            {/* Cột Working Hours */}
+            <div className="flex flex-col">
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Working Hours <span className="text-red-500">*</span>
+              </label>
               <input
-                type="number"
+                type="time"
                 name="workingHours"
+                required
                 value={formData.workingHours}
                 onChange={handleChange}
-                step="0.5"
-                className="w-full px-4 py-2 border border-border bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                className="h-11 text-center w-full px-4 py-2 border border-border bg-background text-foreground rounded-xl focus:ring-2 focus:ring-primary focus:outline-none"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Status</label>
-              <input
-                type="text"
-                value="Active"
-                disabled
-                className="w-full px-4 py-2 border border-border bg-input text-foreground opacity-50"
-              />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Start Date</label>
-              <input
-                type="date"
-                name="startDate"
-                value={formData.startDate}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-border bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">End Date</label>
-              <input
-                type="date"
-                name="endDate"
-                value={formData.endDate}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-border bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            {/* Cột Status (DatePicker) */}
+            <div className="flex flex-col">
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Deadline <span className="text-red-500">*</span>
+              </label>
+              <DatePicker
+                selected={startDate}
+                onChange={(date: Date | null) => setStartDate(date as Date)}
+                showTimeSelect
+                timeFormat="HH:mm"
+                timeIntervals={15}
+                timeCaption="Time"
+                dateFormat="MMMM d, yyyy h:mm aa"
+                // Cực kỳ quan trọng: w-full ở wrapper và h-11 để khớp với input bên trái
+                wrapperClassName="w-full" 
+                className="h-11 text-center w-full px-4 py-2 border border-border bg-background text-foreground rounded-xl focus:ring-2 focus:ring-primary focus:outline-none"
               />
             </div>
           </div>
@@ -152,13 +149,13 @@ export default function TaskDetailModal({ task, onClose, onSave, isNew }: TaskDe
         <div className="flex gap-3 mt-8">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 border border-border text-foreground hover:bg-secondary transition-colors font-medium"
+            className="flex-1 px-4 py-2 border border-border text-foreground hover:bg-secondary transition-colors font-medium rounded-md"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="flex-1 px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 transition-opacity font-medium"
+            className="flex-1 px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 transition-opacity font-medium rounded-md"
           >
             {isNew ? 'Create Task' : 'Save Changes'}
           </button>
