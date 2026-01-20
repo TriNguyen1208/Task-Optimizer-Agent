@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* import React from 'react';
+import ReactDOM from 'react-dom/client';
+import './index.css'; 
+import App from './App'; */
+
 /* --- QUAN TRỌNG: COPY MÃ MÀU TỪ V0 VÀO ĐÂY --- */
 @layer base {
   :root {
