@@ -1,0 +1,2 @@
+- Dùng ngôn ngữ lập trình javascript
+- Folder này dùng để nhận request từ frontend sau đó quyết định nên điều phối với services nào.

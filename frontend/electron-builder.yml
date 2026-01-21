@@ -1,0 +1,23 @@
+appId: com.taskflow.app
+productName: TaskFlow
+directories:
+  buildResources: public
+files:
+  - dist/electron/**/*
+  - dist/react/**/*
+  - node_modules/**/*
+win:
+  target:
+    - nsis
+    - portable
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+mac:
+  target:
+    - dmg
+    - zip
+linux:
+  target:
+    - AppImage
+    - deb
