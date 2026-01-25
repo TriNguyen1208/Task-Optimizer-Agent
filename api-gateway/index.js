@@ -46,7 +46,6 @@ ipcMain.handle('request-to-service', async (event, args) => {
     const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     return new Promise((resolve, reject) => {
-        // A. Thiết lập Timeout (Chống treo app)
         const timeoutId = setTimeout(() => {
             if (pendingRequests.has(requestId)) {
                 pendingRequests.delete(requestId);
@@ -56,7 +55,6 @@ ipcMain.handle('request-to-service', async (event, args) => {
 
         pendingRequests.set(requestId, { resolve, reject, timeoutId });
 
-        // B. Xử lý URL
         const messagePacket = { 
             id: requestId, 
             method, 
@@ -64,20 +62,19 @@ ipcMain.handle('request-to-service', async (event, args) => {
             path: pathStr 
         };
 
-        // C. Điều hướng (Routing) & Rewrite Path
-        // CASE 1: Service Management (/api/manage/...)
+        // Service Management (/api/manage/...)
         if (pathStr.startsWith('/api/manage')) {
             messagePacket.path = pathStr.replace('/api/manage', '/api');  
             service1.send(messagePacket);
         } 
         
-        // CASE 2: Service AI (/api/ai/...)
+        // Service AI (/api/ai/...)
         else if (pathStr.startsWith('/api/ai')) {
             messagePacket.path = pathStr.replace('/api/ai', '/api');
             service2.send(messagePacket);
         } 
         
-        // CASE 3: 404 Not Found
+        // 404 Not Found
         else {
             clearTimeout(timeoutId);
             pendingRequests.delete(requestId);
