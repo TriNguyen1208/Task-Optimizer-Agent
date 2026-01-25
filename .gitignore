@@ -235,3 +235,7 @@ yarn-error.log*
 next-env.d.ts
 package-lock.json
 .DS_Store
+
+#Bao's temp folder/file
+temp-fastapi-services
+api-gateway/test.js
