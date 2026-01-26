@@ -1,8 +1,7 @@
 'use client';
 import './globals.css';
-import './index.css'; // Đảm bảo file này nằm dưới cùng
 
-import { useState, useEffect } from 'react' // <--- Thêm useEffect
+import { useState, useEffect } from 'react' 
 import Sidebar from './components/sidebar'
 import Dashboard from './components/dashboard'
 import Statistics from './components/statistics'
@@ -14,7 +13,6 @@ export default function App() {
 
   // --- 1. THÊM LOGIC DARK MODE VÀO ĐÂY ---
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Lấy giá trị đã lưu, nếu không có thì mặc định là false (Sáng)
     const saved = localStorage.getItem('theme');
     return saved === 'dark';
   });
@@ -30,7 +28,6 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  // Hàm để chuyển đổi qua lại
   const toggleTheme = () => {
     setIsDarkMode(prev => !prev);
   };
@@ -45,8 +42,6 @@ export default function App() {
       case 'statistics':
         return <Statistics />
       case 'settings':
-        // --- 2. TRUYỀN PROPS XUỐNG COMPONENT SETTINGS ---
-        // Chúng ta truyền trạng thái (isDarkMode) và hàm đổi màu (toggleTheme)
         return <Settings isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
       default:
         return <Dashboard />
@@ -54,7 +49,6 @@ export default function App() {
   }
 
   return (
-    // Thêm text-foreground để chữ tự đổi màu
     <div className="flex h-screen bg-background text-foreground transition-colors duration-300">
       <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
       <main className="flex-1 overflow-auto">
