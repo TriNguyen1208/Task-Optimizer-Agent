@@ -4,13 +4,16 @@
 # Cách chạy:
 - Trước hết, nhớ: `npm install find-my-way`
 - Chạy: `docker-compose up`
-- Chạy: `node api-gateway/index.js`
+- Chạy: 
+    `node api-gateway/index.js` (khi chạy app)
+hoặc `node api-gateway/web_index.js` (khi chạy web lúc code)
+
 Chạy xong 2 cái trên là gửi API được, các API liệt kê như bên dưới
 
 Management services:
 # Tasks List
 1. Get all tasks in tasks list
-    GET /api/manage/task/
+    GET /api/manage/task
 Return:
     [
         {
@@ -37,7 +40,7 @@ Return:
     }
 
 3. Post a task to the tasks list:
-    POST /api/manage/tasks/
+    POST /api/manage/tasks
 Return: 
     {
         'id': int,
@@ -74,7 +77,7 @@ Return:
 
 # Schedule
 1. Get schedule of all tasks: 
-    GET /api/manage/schedule/
+    GET /api/manage/schedule
 Return:
     [
         {
@@ -153,7 +156,7 @@ Return:
     }
 
 7. Add schedule
-    POST /api/manage/schedule/
+    POST /api/manage/schedule
     body: {date, start_time, end_time, task_id}
 Return:
     {
@@ -165,7 +168,7 @@ Return:
     }
 
 8. Delete schedule
-    DELETE /api/manage/schedule/
+    DELETE /api/manage/schedule/{id}
 Return:
     {
         'id': int,
