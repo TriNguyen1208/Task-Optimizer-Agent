@@ -26,9 +26,9 @@ export default function Statistics() {
           <div className="p-3 bg-blue-900">
             <CheckCircle className="w-6 h-6 text-blue-300" />
           </div>
-          <div>
+          <div className='flex flex-col gap-3'>
             <p className="text-sm text-muted-foreground">Tasks Completed</p>
-            <p className="text-2xl font-bold text-foreground">{historyData.length}</p>
+            <p className="text-2xl font-bold text-foreground text-center">{historyData.length}</p>
           </div>
         </Card>
 
@@ -36,9 +36,9 @@ export default function Statistics() {
           <div className="p-3 bg-purple-900">
             <Clock className="w-6 h-6 text-purple-300" />
           </div>
-          <div>
+          <div className='flex flex-col gap-3'>
             <p className="text-sm text-muted-foreground">Total Hours Worked</p>
-            <p className="text-2xl font-bold text-foreground">{totalCompletedHours.toFixed(1)}h</p>
+            <p className="text-2xl font-bold text-foreground text-center">{totalCompletedHours.toFixed(1)}h</p>
           </div>
         </Card>
 
@@ -46,9 +46,9 @@ export default function Statistics() {
           <div className="p-3 bg-green-900">
             <TrendingUp className="w-6 h-6 text-green-300" />
           </div>
-          <div>
+          <div className='flex flex-col gap-3'>
             <p className="text-sm text-muted-foreground">Avg Hours/Task</p>
-            <p className="text-2xl font-bold text-foreground">{averageHoursPerTask}h</p>
+            <p className="text-2xl font-bold text-foreground text-center">{averageHoursPerTask}h</p>
           </div>
         </Card>
 
@@ -56,9 +56,9 @@ export default function Statistics() {
           <div className="p-3 bg-orange-900">
             <Zap className="w-6 h-6 text-orange-300" />
           </div>
-          <div>
+          <div className='flex flex-col gap-3'>
             <p className="text-sm text-muted-foreground">Completion Rate</p>
-            <p className="text-2xl font-bold text-foreground">100%</p>
+            <p className="text-2xl font-bold text-foreground text-center">100%</p>
           </div>
         </Card>
       </div>
@@ -79,10 +79,18 @@ export default function Statistics() {
             <tbody>
               {historyData.map((item) => (
                 <tr key={item.id} className="border-b border-border hover:bg-secondary transition-colors">
-                  <td className="py-3 px-4 text-foreground font-medium">{item.task}</td>
-                  <td className="py-3 px-4 text-muted-foreground">{item.description}</td>
-                  <td className="py-3 px-4 text-foreground">{item.completedDate}</td>
-                  <td className="py-3 px-4 text-right text-foreground font-medium">{item.hours}h</td>
+                  <td className="py-3 px-4 text-foreground font-medium min-w-[200px] max-w-[300px]"> 
+                    <div className='line-clamp-1'>{item.task}</div>
+                  </td>
+                  <td className="py-3 px-4 text-muted-foreground min-w-[150px] max-w-[400px]">
+                    <div className='line-clamp-1'>{item.description}</div>
+                  </td>
+                  <td className="py-3 px-4 text-foreground min-w-[150px] max-w-[400px]">
+                    <div className='line-clamp-1'>{item.completedDate}</div>
+                  </td>
+                  <td className="py-3 px-4 text-right text-foreground font-medium min-w-[150px] max-w-[400px]">
+                    <div className='line-clamp-1'>{item.hours}h</div>
+                  </td>
                 </tr>
               ))}
             </tbody>

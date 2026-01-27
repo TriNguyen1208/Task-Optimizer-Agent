@@ -123,11 +123,11 @@ export default function Dashboard() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Name</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Deadline</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Working time</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground">Time left</th>
-                  <th className="text-center py-3 px-4 font-semibold text-foreground">Finished</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground text-center">Name</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground text-center">Deadline</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground text-center">Working time</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground text-center">Time left</th>
+                  <th className="text-center py-3 px-4 font-semibold text-foreground text-center">Finished</th>
                 </tr>
               </thead>
               <tbody>
@@ -135,16 +135,19 @@ export default function Dashboard() {
                   <tr key={task.id} className="border-b border-border hover:bg-secondary transition-colors">
                     <td
                       onClick={() => handleTaskClick(task)}
-                      className="py-3 px-4 text-foreground cursor-pointer hover:text-primary font-medium"
+                      className="py-3 px-4 text-foreground cursor-pointer hover:text-primary font-medium text-center max-w-[200px] min-w-[150px]"
                     >
-                      {task.name}
+                      {/* Bọc nội dung vào div và đặt line-clamp ở đây */}
+                      <div className="line-clamp-3">
+                        {task.name}
+                      </div>
                     </td>
-                    <td className="py-3 px-4 text-foreground">{task.deadline}</td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 text-foreground text-center">{task.deadline}</td>
+                    <td className="py-3 px-4 text-center text-center">
                       {task.workingHours}
                     </td>
-                    <td className="py-3 px-4 text-foreground">{task.timeLeft}</td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-3 px-4 text-foreground text-center">{task.timeLeft}</td>
+                    <td className="py-3 px-4 text-center text-center">
                       <input
                         type="checkbox"
                         onChange={() => handleFinishTask(task.id)}
@@ -164,45 +167,6 @@ export default function Dashboard() {
           )}
         </Card>
 
-        {/* Quick Chat */}
-        <Card className="p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <MessageSquare className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-bold text-foreground">Quick Chat</h2>
-          </div>
-
-          <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
-            {chatMessages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`p-3 max-w-xs rounded-md ${
-                  msg.sender === 'user'
-                    ? 'bg-primary text-primary-foreground ml-auto mr-4'
-                    : 'bg-secondary text-foreground mr-auto'
-                }`}
-              >
-                <p className="text-sm">{msg.text}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Ask something..."
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-              className="flex-1 px-3 py-2 bg-input border border-border text-foreground placeholder-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
-            />
-            <button
-              onClick={handleSendMessage}
-              className="p-2 bg-primary text-primary-foreground hover:opacity-90 rounded-md"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </div>
-        </Card>
       </div>
 
       <TaskDetailModal 
