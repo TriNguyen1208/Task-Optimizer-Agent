@@ -4,8 +4,8 @@ from ai_services import organize_schedule, predict_working_time
 
 app = FastAPI()
 
-@app.get("/api/ai/schedule")
-def generate_schedule():
+@app.get("/api/schedule")
+def schedule():
     try:
         return organize_schedule()
     except Exception as e:
@@ -14,10 +14,10 @@ def generate_schedule():
             detail=str(e)
         )
 
-@app.get("api/ai/schedule")
-def predict_working_time():
+@app.get("api/working-time")
+def working_time(name: str, description: str):
     try:
-        return predict_working_time()
+        return predict_working_time(name, description)
     except Exception as e:
         raise HTTPException(
             status_code=500,
