@@ -1,6 +1,6 @@
 import httpx
 
-OTHER_SERVICE_URL = "https://localhost:3001/api/manage"
+OTHER_SERVICE_URL = "https://localhost:3001/api"
 
 async def get_tasks():
     async with httpx.AsyncClient() as client:

@@ -1,4 +1,18 @@
 - Dùng ngôn ngữ lập trình python nha
+# Dependencies
+fastapi
+uvicorn
+pydantic
+langchain
+langchain-core
+langchain-google-genai
+python-dotenv
+opik
+google-generativeai
+
+# Configure .env (tạo file .env trong thư mục ai-services/)
+GOOGLE_API_KEY = ...
+OPIK_API_KEY = ... 
 
 # APIs
 1. Get schedule:
@@ -6,9 +20,9 @@ GET /api/schedule
 Return:
     [
         {
-            'date': 
-            'start_time':
-            'end_time':
+            'date': date (yyyy/mm/dd)
+            'start_time': time (hh:mm:ss)
+            'end_time': time (hh:mm:ss)
             'task_id': int
         },
         ...

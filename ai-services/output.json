@@ -1,81 +1,75 @@
 {
     "tasks": [
         {
-            "date": "27/01/2026",
-            "start_time": "11:00",
-            "end_time": "12:00",
-            "task_id": 3
-        },
-        {
-            "date": "27/01/2026",
-            "start_time": "13:00",
-            "end_time": "15:00",
-            "task_id": 1
-        },
-        {
-            "date": "27/01/2026",
-            "start_time": "15:30",
-            "end_time": "17:30",
-            "task_id": 1
-        },
-        {
-            "date": "27/01/2026",
-            "start_time": "19:00",
-            "end_time": "20:00",
-            "task_id": 1
-        },
-        {
-            "date": "28/01/2026",
-            "start_time": "08:00",
-            "end_time": "10:00",
-            "task_id": 3
-        },
-        {
-            "date": "28/01/2026",
-            "start_time": "10:30",
-            "end_time": "12:30",
-            "task_id": 3
-        },
-        {
-            "date": "28/01/2026",
-            "start_time": "13:30",
-            "end_time": "14:30",
-            "task_id": 1
-        },
-        {
-            "date": "29/01/2026",
-            "start_time": "11:00",
-            "end_time": "12:00",
-            "task_id": 3
-        },
-        {
-            "date": "30/01/2026",
-            "start_time": "08:00",
-            "end_time": "10:00",
+            "date": "2026-01-27",
+            "start_time": "11:00:00",
+            "end_time": "12:00:00",
             "task_id": 2
         },
         {
-            "date": "30/01/2026",
-            "start_time": "10:30",
-            "end_time": "12:30",
+            "date": "2026-01-27",
+            "start_time": "12:00:00",
+            "end_time": "14:00:00",
+            "task_id": 3
+        },
+        {
+            "date": "2026-01-27",
+            "start_time": "14:30:00",
+            "end_time": "16:30:00",
+            "task_id": 3
+        },
+        {
+            "date": "2026-01-27",
+            "start_time": "19:00:00",
+            "end_time": "22:00:00",
+            "task_id": 3
+        },
+        {
+            "date": "2026-01-28",
+            "start_time": "08:00:00",
+            "end_time": "12:00:00",
             "task_id": 2
         },
         {
-            "date": "31/01/2026",
-            "start_time": "11:00",
-            "end_time": "12:00",
+            "date": "2026-01-28",
+            "start_time": "13:00:00",
+            "end_time": "14:00:00",
+            "task_id": 1
+        },
+        {
+            "date": "2026-01-28",
+            "start_time": "19:00:00",
+            "end_time": "22:00:00",
+            "task_id": 1
+        },
+        {
+            "date": "2026-01-29",
+            "start_time": "11:00:00",
+            "end_time": "12:00:00",
             "task_id": 2
         },
         {
-            "date": "01/02/2026",
-            "start_time": "08:00",
-            "end_time": "10:00",
+            "date": "2026-01-29",
+            "start_time": "12:00:00",
+            "end_time": "14:00:00",
+            "task_id": 1
+        },
+        {
+            "date": "2026-01-30",
+            "start_time": "08:00:00",
+            "end_time": "12:00:00",
             "task_id": 2
         },
         {
-            "date": "01/02/2026",
-            "start_time": "10:30",
-            "end_time": "12:30",
+            "date": "2026-01-31",
+            "start_time": "11:00:00",
+            "end_time": "12:00:00",
+            "task_id": 2
+        },
+        {
+            "date": "2026-02-01",
+            "start_time": "08:00:00",
+            "end_time": "12:00:00",
             "task_id": 2
         }
     ]
