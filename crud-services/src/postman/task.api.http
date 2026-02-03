@@ -1,0 +1,33 @@
+### Get all task
+GET http://localhost:3001/api/task
+
+### Get task by id
+GET http://localhost:3001/api/task/1
+
+###Post new task
+POST http://localhost:3001/api/task
+Content-Type: application/json
+
+{
+    "name": "Học Node.js nâng cao",
+    "description": "Tìm hiểu về Worker Threads và Streams",
+    "deadline": "2026-02-10T23:59:59+07:00",
+    "working_time": 150,
+    "finished": false
+}
+
+###Update task
+PATCH  http://localhost:3001/api/task/1
+Content-Type: application/json
+
+{
+    "name": "Học Reactjs nâng cao",
+    "description": "Tìm hiểu về Worker Threads và Streams",
+    "deadline": "2026-02-10T23:59:59+07:00",
+    "working_time": 150,
+    "finished": false
+}
+
+###Delete task
+DELETE http://localhost:3001/api/task/1
+Content-Type: application/json

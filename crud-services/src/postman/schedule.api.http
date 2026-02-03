@@ -1,0 +1,42 @@
+##Download extension RESTClient
+
+### Get all schedule
+GET http://localhost:3001/api/schedule
+
+###Get schedule by id
+GET http://localhost:3001/api/schedule/1
+
+
+###Get schedule by date
+GET http://localhost:3001/api/schedule?date=...
+
+###Get schedule between date
+GET http://localhost:3001/api/schedule?from_date=...&to_date=...
+
+
+###Get schedule by task
+GET http://localhost:3001/api/schedule?task_id=...
+
+### Create schedule
+POST http://localhost:3001/api/schedule
+Content-Type: application/json
+
+{
+    "date": "2026-02-05",
+    "start_time": "08:30:00",
+    "end_time": "10:30:00",
+    "task_id": 3
+}
+
+
+### Update schedule
+PATCH http://localhost:3001/api/schedule/2
+Content-Type: application/json
+
+{
+    "date": "2026-02-05",
+    "start_time": "10:30:00",
+    "end_time": "16:30:00",
+    "task_id": 3
+}
+

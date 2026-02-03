@@ -6,7 +6,7 @@
   "main": "./src/electron/main.js",
   "homepage": "./",
   "scripts": {
-    "dev:website": "concurrently \"cross-env SKIP_PREFLIGHT_CHECK=true react-app-rewired start\" \"wait-on http://localhost:3000\"",
+    "dev": "concurrently \"cross-env SKIP_PREFLIGHT_CHECK=true react-app-rewired start\" \"wait-on http://localhost:3000\"",
     "build": "cross-env SKIP_PREFLIGHT_CHECK=true react-app-rewired build && electron-builder",
     "start": "electron .",
     "lint": "eslint .",
