@@ -8,6 +8,7 @@ class ScheduleServices{
         return ScheduleServices.instance
     }
     async getSchedule(req){
+        const {user_id} = req.params
         const {
             date,
             from_date,
@@ -16,20 +17,20 @@ class ScheduleServices{
         } = req.query
 
         if(date){
-            return await this.getScheduleByDate(date)
+            return await this.getScheduleByDate(user_id, date)
         }
         else if(from_date && to_date){
-            return await this.getScheduleBetweenDays(from_date, to_date)
+            return await this.getScheduleBetweenDays(user_id, from_date, to_date)
         }
         else if(task_id){
-            return await this.getScheduleByTask(task_id)
+            return await this.getScheduleByTask(user_id, task_id)
         }
         else{
-            return await this.getAllSchedules()
+            return await this.getAllSchedules(user_id)
         }
     }
 
-    async getAllSchedules() {
+    async getAllSchedules(user_id) {
         const queryText = `
             SELECT
                 s.id,
@@ -39,10 +40,11 @@ class ScheduleServices{
                 t.name AS task_name
             FROM schedule s
             JOIN tasks t ON s.task_id = t.id
+            WHERE s.user_id = $1
             ORDER BY s.id ASC;
         `;
         
-        const { rows } = await db.query(queryText);
+        const { rows } = await db.query(queryText, [user_id]);
         return rows[0]; 
     }
     async getScheduleByID(id){
@@ -63,7 +65,7 @@ class ScheduleServices{
         }
         return rows[0]
     }
-    async getScheduleByDate(date){
+    async getScheduleByDate(user_id, date){
         const queryText = `
             SELECT
                 s.id,
@@ -73,12 +75,12 @@ class ScheduleServices{
                 t.name AS task_name
             FROM schedule s
             JOIN tasks t ON s.task_id = t.id
-            WHERE s.date = $1   
+            WHERE s.user_id = $1 AND s.date = $2
         `
-        const {rows} = await db.query(queryText, [date])
+        const {rows} = await db.query(queryText, [user_id, date])
         return rows[0]
     }
-    async getScheduleBetweenDays(from_date, to_date){
+    async getScheduleBetweenDays(user_id, from_date, to_date){
         const queryText = `
             SELECT
                 s.id,
@@ -88,16 +90,16 @@ class ScheduleServices{
                 t.name AS task_name
             FROM schedule s
             JOIN tasks t ON s.task_id = t.id
-            WHERE s.date >= $1 AND s.date < $2
+            WHERE s.user_id = $1 AND s.date >= $2 AND s.date < $3
         `
-        const {rows} = await db.query(queryText, [from_date, to_date])
+        const {rows} = await db.query(queryText, [user_id, from_date, to_date])
         return rows[0]
     }
-    async getScheduleByTask(task_id){
+    async getScheduleByTask(user_id, task_id){
         const queryText =  `
-            SELECT * FROM schedule WHERE task_id = $1
+            SELECT * FROM schedule WHERE user_id = $1 AND task_id = $2
         `
-        const {rows} = await db.query(queryText, [task_id])
+        const {rows} = await db.query(queryText, [user_id, task_id])
         return rows[0]
     }
     async createSchedule(
@@ -105,17 +107,19 @@ class ScheduleServices{
         start_time,
         end_time,
         task_id,
+        user_id
     ){  
         const queryText = `
-            INSERT INTO schedule (date, start_time, end_time, task_id)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO schedule (date, start_time, end_time, task_id, user_id)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING *
         `
         const {rows} = await db.query(queryText, [
             date,
             start_time, 
             end_time, 
-            task_id
+            task_id,
+            user_id
         ])
 
         return rows[0]
@@ -139,6 +143,7 @@ class ScheduleServices{
         start_time,
         end_time,
         task_id,
+        user_id,
         id
     ){
         if (!id) {
@@ -151,7 +156,8 @@ class ScheduleServices{
                 start_time = COALESCE($2, start_time),
                 end_time = COALESCE($3, end_time),
                 task_id = COALESCE($4, task_id)
-            WHERE id = $5
+                user_id = COALESCE($5, user_id)
+            WHERE id = $6
             RETURNING *
         `
         const {rows} = await db.query(queryText, [
@@ -159,6 +165,7 @@ class ScheduleServices{
             start_time, 
             end_time, 
             task_id, 
+            user_id,
             id
         ])
         if(rows.length == 0){

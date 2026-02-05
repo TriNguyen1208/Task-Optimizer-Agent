@@ -21,7 +21,8 @@ class Database{
                             description TEXT,
                             deadline TIMESTAMPTZ,
                             working_time INTEGER,
-                            finished BOOLEAN DEFAULT FALSE
+                            finished BOOLEAN DEFAULT FALSE,
+                            user_id int
                         );
                     `
                 },
@@ -33,11 +34,29 @@ class Database{
                             date DATE NOT NULL,
                             start_time TIME NOT NULL,
                             end_time TIME NOT NULL,
-                            task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE
+                            task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+                            user_id
                         );
                     `
                 },
-                
+                {
+                    tableName: 'user_info',
+                    query: `
+                        CREATE TABLE user_info (
+                            id SERIAL PRIMARY KEY,
+                            name VARCHAR(255),
+                            age INTEGER,
+                            domain VARCHAR(255),
+                            role VARCHAR(255),
+                            level VARCHAR(255),
+                            habits TEXT,
+                            busy_time TEXT,
+                            working_hours_per_day INTEGER,
+                            peak_working_hours TEXT,
+                            more_info TEXT
+                        );
+                    `
+                }
             ]
             Database.instance = this;
         }
@@ -53,6 +72,9 @@ class Database{
 
     async init(){
         try {
+
+            // const currentDb = await this.query("SELECT current_database();");
+            // console.log("Code đang thực tế kết nối tới database:", currentDb.rows[0].current_database);
             console.log("Đang kiểm tra cơ sở dữ liệu...");
 
             for (const schema of this.TABLE_SCHEMAS) {
@@ -65,7 +87,7 @@ class Database{
                 `;
                 const res = await this.query(checkQuery, [schema.tableName]);
                 const exists = res.rows[0].exists;
-
+                
                 if (!exists) {
                     console.log(`Đang tạo bảng '${schema.tableName}'...`);
                     await this.query(schema.query);

@@ -2,6 +2,7 @@ import express, { Router } from 'express'
 import morgan from 'morgan'
 import compression from 'compression'
 import registerRouter from '#@/routes/index.routes.js'
+
 //init middleware
 const app = express()
 

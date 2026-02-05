@@ -53,12 +53,14 @@ class ScheduleController{
             start_time,
             end_time,
             task_id,
+            user_id
         } = req.body;
         const schedule = await services.createSchedule(
             date,
             start_time,
             end_time,
-            task_id
+            task_id,
+            user_id
         )
         return res.status(StatusCodes.CREATED).json({
             "messages": "Create schedule successfully",
@@ -79,7 +81,8 @@ class ScheduleController{
             date, 
             start_time, 
             end_time, 
-            task_id
+            task_id,
+            user_id
         } = req.body
 
         const schedule = await services.updateSchedule(
@@ -87,7 +90,8 @@ class ScheduleController{
             start_time,
             end_time,
             task_id,
-            id
+            id,
+            user_id
         )
         return res.status(StatusCodes.ACCEPTED).json({
             "messages": "Delete schedule successfully",

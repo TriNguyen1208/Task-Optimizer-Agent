@@ -29,14 +29,16 @@ class TaskController{
             description,
             deadline,
             working_time,
-            finished
+            finished,
+            user_id
         } = req.body
         const task = await services.createTask(
             name,
             description,
             deadline,
             working_time,
-            finished
+            finished,
+            user_id
         )
         return res.status(StatusCodes.CREATED).json({
             "messages": "Create new task successfully",
@@ -49,7 +51,8 @@ class TaskController{
             description,
             deadline,
             working_time,
-            finished
+            finished,
+            user_id
         } = req.body
         const {id} = req.params
         const task = await services.updateTask(
@@ -58,7 +61,8 @@ class TaskController{
             description,
             deadline,
             working_time,
-            finished
+            finished,
+            user_id
         )
         return res.status(StatusCodes.OK).json({
             "messages": "Update task successfully",

@@ -3,7 +3,7 @@ import ScheduleController from '#@/controllers/schedule.controller.js'
 
 const router = express.Router()
 
-router.get('/', ScheduleController.getSchedule)
+router.get('/:user_id', ScheduleController.getSchedule)
 router.get('/:id', ScheduleController.getScheduleByID)
 
 

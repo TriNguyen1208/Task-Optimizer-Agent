@@ -8,13 +8,14 @@ class TaskServices{
         return TaskServices.instance
     }
     async getTask(req){
-        return await this.getAllTasks()
+        const {user_id} = req.params
+        return await this.getAllTasks(user_id)
     }   
     async getAllTasks(){
         const queryText = `
-            SELECT * FROM tasks ORDER BY id ASC
+            SELECT * FROM tasks WHERE user_id = $1 ORDER BY id ASC
         `
-        const {rows} = await db.query(queryText)
+        const {rows} = await db.query(queryText, [user_id])
         return rows[0]
     }
     async getTaskByID(id){
@@ -29,11 +30,12 @@ class TaskServices{
         description,
         deadline,
         working_time,
-        finished
+        finished,
+        user_id
     ){
         const queryText = `
-            INSERT INTO tasks (name, description, deadline, working_time, finished)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO tasks (name, description, deadline, working_time, finished, user_id)
+            VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *
         `
         const {rows} = await db.query(queryText, [
@@ -41,7 +43,8 @@ class TaskServices{
             description || "",
             deadline,
             working_time,
-            finished
+            finished,
+            user_id
         ])
         return rows[0]
     }
@@ -52,7 +55,8 @@ class TaskServices{
         description,
         deadline,
         working_time,
-        finished
+        finished,
+        user_id
     ){
         if (!id) {
             return res.status(400).json({ message: 'Task id is required' });
@@ -65,7 +69,8 @@ class TaskServices{
                 deadline = COALESCE($3, deadline),
                 working_time = COALESCE($4, working_time),
                 finished = COALESCE($5, finished)
-            WHERE id = $6
+                user_id = COALESCE($6, user_id)
+            WHERE id = $7
             RETURNING *
         `
         const {rows} = await db.query(queryText, [
@@ -74,6 +79,7 @@ class TaskServices{
             deadline,
             working_time,
             finished,
+            user_id,
             id
         ])
         if(rows.length == 0){
