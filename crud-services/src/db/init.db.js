@@ -35,7 +35,7 @@ class Database{
                             start_time TIME NOT NULL,
                             end_time TIME NOT NULL,
                             task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
-                            user_id
+                            user_id INTEGER
                         );
                     `
                 },

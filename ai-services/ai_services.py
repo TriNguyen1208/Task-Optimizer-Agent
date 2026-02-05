@@ -48,6 +48,10 @@ class ScheduleOutput(BaseModel):
     """Output schedule, including many schedule units"""
     tasks: List[SingleTask]
 
+def get_current_date():
+    now = datetime.now()
+    return now.strftime("%d/%m/%Y")
+
 # @tool 
 # @opik.track(name="get_data")
 # def get_data():
@@ -57,12 +61,11 @@ class ScheduleOutput(BaseModel):
 #         data = json.load(f)
 #     return data
 
-@tool
 @opik.track(name="get_data")
-def get_data():
-    """Tool to read user's information, and the tasks information"""
-    tasks, _ = get_tasks()
-    user_info = get_user_info()
+async def get_data(user_id: int):
+    """Tool to read user's information, and the tasks information. The input parameter is the user's id"""
+    tasks, _ = await get_tasks(user_id)
+    user_info = await get_user_info(user_id)
     return {"tasks": tasks, "user_info": user_info}
 
 @tool
@@ -91,16 +94,38 @@ schedule_agent = create_agent(
 )
 
 @opik.track(name="schedule")
-def organize_schedule():
+async def organize_schedule(user_id: int):
+    # messages = [
+    #     {"role": "system", "content": "Your job is to read user tasks and arrange them into a logical schedule."},
+    #     {"role": "user", "content": "Using tool to read neccessary information, and the tasks I have to make plan (schedule) to do tasks."
+    #     "It would be great if my tasks can be done at least 1 day earlier than the deadline."
+    #     "Remember that total predicted hours to do the task must be at least equal to 'working hours' attribute in each task."},
+    # ]
+    system_instruction = """
+    You are an expert AI Task Scheduler. Your goal is to generate a high-precision schedule.
+    You have 2 main tasks: 
+    1. Read user's information (NOTE that they are facts, not preferences!). Understand user's information deeply.
+    2. Generate a high-precision schedule following these reasoning steps (Chain of Thought):
+        Step 1: Calculate "Internal Deadlines" for each task (Should be earlier than the deadline).
+        Step 2: Map out available time slots per day (considering school and sleep).
+        Step 3: Distribute tasks based on their nature described in input data.
+        Step 4: Double-check if the total hours for tasks are sufficient (at least equal to the input working hours).
+    """
+    input_data = await get_data(user_id)
+    input_data_str = json.dumps(input_data, ensure_ascii=False, indent=2)
     messages = [
-        {"role": "system", "content": "Your job is to read user tasks and arrange them into a logical schedule."},
-        {"role": "user", "content": "Using tool to read neccessary information, and the tasks I have to make plan (schedule) to do tasks."
-        "It would be great if my tasks can be done at least 1 day earlier than the deadline"},
+        {"role": "system", "content": system_instruction},
+        {
+            "role": "user", 
+            "content": f"Today is {get_current_date()}. Read information of me and my tasks, then generate appropriate schedule.\n"
+                        f"My information and tasks: \n{input_data_str}\n"
+        }
     ]
 
-    result: ScheduleOutput = schedule_agent.invoke({
+    result: ScheduleOutput = await schedule_agent.ainvoke({
         "messages": messages
-    })["structured_response"]
+    })
+    result = result["structured_response"]
 
     data = result.model_dump(mode="json")
 
@@ -109,16 +134,17 @@ def organize_schedule():
 
     return data["tasks"] 
 
-def predict_working_time(name: str, description: str):
-    _, finished_tasks = get_tasks()
-    user_info = get_user_info()
+async def predict_working_time(name: str, description: str, user_id: int):
+    _, finished_tasks = await get_tasks(user_id)
+    user_info = await get_user_info(user_id)
 
-    input = {
+    input_data = {
         "new_task_name": name,
         "new_task_description": description,
         "finished_tasks": finished_tasks,
         "my_info": user_info
     }
+    input_data_str = json.dumps(input_data, ensure_ascii=False, indent=2)
 
     messages = [
         {
@@ -127,16 +153,12 @@ def predict_working_time(name: str, description: str):
         },
         {
             "role": "user", 
-            "content": 
-            [
-                {"You predict the working hours of my new task. You have its name and description, and you predict based on my information, my tasks and corresponding working hours in the past. Just answer the number."},
-                {input}
-            ]
+            "content": f"You predict the working hours of my new task. You have its name and description,"
+                        "and you predict based on my information, my tasks and corresponding working hours in the past."
+                        f"Just answer a number. My input:\n\n{input_data_str}\n\n"
         }
     ]
 
-    result = gemini_model.invoke({
-        "messages": messages
-    })["structured_response"]
+    response = await gemini_model.ainvoke(messages)
 
-    return result
+    return response.content

@@ -12,7 +12,11 @@ google-generativeai
 
 # Configure .env (tạo file .env trong thư mục ai-services/)
 GOOGLE_API_KEY = ...
-OPIK_API_KEY = ... 
+OPIK_API_KEY = ...
+
+# Run AI server
+cd ai-services
+uvicorn server:app --port 3002
 
 # APIs
 1. Get schedule:

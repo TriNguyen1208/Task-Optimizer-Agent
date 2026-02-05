@@ -11,12 +11,12 @@ class TaskServices{
         const {user_id} = req.params
         return await this.getAllTasks(user_id)
     }   
-    async getAllTasks(){
+    async getAllTasks(user_id){
         const queryText = `
             SELECT * FROM tasks WHERE user_id = $1 ORDER BY id ASC
         `
         const {rows} = await db.query(queryText, [user_id])
-        return rows[0]
+        return rows
     }
     async getTaskByID(id){
         const queryText = `

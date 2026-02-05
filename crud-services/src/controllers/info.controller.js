@@ -10,10 +10,10 @@ class InfoController{
     }
     async getInfo(req, res){
         const {id} = req.params
-        const info = await services.getInfo(info)
+        const data = await services.getInfo(id)
         return res.status(StatusCodes.OK).json({
             "messages": "Get user's info by id successfully",
-            info
+            data
         })
     }
     async editInfo(req, res){
