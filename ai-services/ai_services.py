@@ -157,6 +157,10 @@ async def orgranize_schedule_1_task(cookies: dict, task_id: int):
         return final_output.model_dump()["tasks"]
     return final_output 
 
+class TimePrediction(BaseModel):
+    hours: int = Field(description="The predicted working hours as an integer")
+    reasoning: str = Field(description="Short explanation why you chose this number") 
+
 @opik.track(name="predict_working_time")
 async def predict_working_time(name: str, description: str, cookies: dict):
     _, finished_tasks = await get_tasks(cookies)
@@ -174,5 +178,7 @@ async def predict_working_time(name: str, description: str, cookies: dict):
         {"role": "user", "content": f"Input Data: {json.dumps(input_data, ensure_ascii=False)}"}
     ]
 
-    response = await gemini_model.ainvoke(messages)
-    return response.content
+    structured_llm = gemini_model.with_structured_output(TimePrediction)
+
+    result = await structured_llm.ainvoke(messages)
+    return result.hours
