@@ -9,11 +9,12 @@ import { useDispatch } from 'react-redux';
 import { logoutUser } from '@/services/auth.api';
 import { logout } from '@/slices/auth.slice.js' 
 import {toast} from 'react-toastify'
+import {useQueryClient} from '@tanstack/react-query'
 
 export default function Profile() {
   const { data: info, isLoading: isLoadingInfo} = useInfo.getInfo(); 
   const { mutate: updateInfo, isPending: isPendingInfo } = useInfo.updateInfo();
-
+  const queryClient = useQueryClient();
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
@@ -39,12 +40,17 @@ export default function Profile() {
 
   const handleSave = (e) => {
     e.preventDefault();
-    updateInfo(formData);
+    updateInfo({
+      ...formData,
+      age: formData.age == "" ? 0 : Number(formData.age),
+      working_hours_per_day: formData.working_hours_per_day == "" ? 0 : Number(formData.working_hours_per_day),
+    });
   };
 
   const handleLogout = async (e) => {
     e.preventDefault();
     try{
+      queryClient.clear();
       await logoutUser();
       dispatch(logout())  
       toast.success("Logout successfully")
@@ -97,7 +103,7 @@ export default function Profile() {
                 <h2 className="text-xl font-bold text-foreground mb-1">{formData.name || 'Your Name'}</h2>
                 <div className="space-y-1">
                   <p className="text-muted-foreground text-sm">{localStorage.getItem('email')}</p>
-                  {formData.age && (
+                  {formData.age != '' && formData.age > 0 && (
                     <p className="text-muted-foreground text-sm">{formData.age} years old</p>
                   )}
                 </div>
@@ -110,7 +116,7 @@ export default function Profile() {
                     Job Information
                   </p>
                   <div className="space-y-3">
-                    {formData.js && (
+                    {formData.domain && (
                       <div>
                         <p className="text-xs text-muted-foreground font-medium">Domain</p>
                         <p className="text-foreground text-sm mt-0.5">{formData.domain}</p>
@@ -143,7 +149,7 @@ export default function Profile() {
               )}
 
               {/* Working Hours & Peak Productivity Preview */}
-              {(formData.working_hours_per_day || formData.peak_working_hours) && (
+              {((formData.working_hours_per_day && formData.working_hours_per_day > 0) || formData.peak_working_hours) && (
                 <div className="mb-5 pb-5 border-b border-border">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                     Productivity

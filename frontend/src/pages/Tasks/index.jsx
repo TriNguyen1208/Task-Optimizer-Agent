@@ -152,7 +152,7 @@ export default function Task() {
           addTask({task: newTask, isAutoSchedule})
         }}
         isNew
-        task={showAddModal ? { name: '', description: '', working_time: 0, deadline: ''} : null} 
+        task={showAddModal ? { name: '', description: '', working_time: 0, deadline: new Date()} : null} 
       />
     </div>
   )

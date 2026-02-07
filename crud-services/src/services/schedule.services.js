@@ -198,35 +198,58 @@ class ScheduleServices{
     }
 
     async updateSchedule(
-        date,
-        start_time,
-        end_time,
-        user_id,
-        id
-    ){
-        if (!id) {
-            throw new Error("Missing id")
+        schedule_id, // Bắt buộc phải có để biết sửa cái nào
+        date, 
+        start_time, 
+        end_time, 
+        task_id, 
+        task_name, 
+        user_id 
+    ) {
+        if (!schedule_id) throw new Error("Missing schedule_id");
+
+        let finalTaskId = task_id;
+
+        // 1. Nếu không có task_id thì mới đi tìm theo task_name
+        if (!finalTaskId && task_name) {
+            const queryTextGetID = `
+                SELECT id FROM task
+                WHERE name = $1 AND user_id = $2
+                LIMIT 1
+            `;
+            const { rows: taskRows } = await db.query(queryTextGetID, [task_name, user_id]);
+
+            if (taskRows.length > 0) {
+                finalTaskId = taskRows[0].id;
+            }
         }
+
+        // 2. Cập nhật vào bảng schedule
         const queryText = `
             UPDATE schedule
             SET
                 date = COALESCE($1, date),
                 start_time = COALESCE($2, start_time),
-                end_time = COALESCE($3, end_time)
-            WHERE user_id = $4 AND id = $5
+                end_time = COALESCE($3, end_time),
+                task_id = COALESCE($4, task_id)
+            WHERE user_id = $5 AND id = $6
             RETURNING *
-        `
-        const {rows} = await db.query(queryText, [
-            date, 
-            start_time, 
-            end_time, 
+        `;
+        
+        const { rows } = await db.query(queryText, [
+            date || null,      // Đảm bảo truyền null nếu là "" hoặc undefined
+            start_time || null,
+            end_time || null,
+            finalTaskId || null,
             user_id,
-            id
-        ])
-        if(rows.length == 0){
-            throw new Error("Schedule not found")
+            schedule_id
+        ]);
+
+        if (rows.length === 0) {
+            throw new Error("Không tìm thấy lịch trình hoặc bạn không có quyền sửa.");
         }
-        return rows[0]
+
+        return rows[0];
     }
 }
 const instance = ScheduleServices.getInstance()

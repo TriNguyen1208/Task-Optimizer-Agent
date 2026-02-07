@@ -41,6 +41,22 @@ export default function Schedule() {
   useEffect(() => {
     if (!schedules_data) return;
 
+    // 1. Duyệt qua dữ liệu từ API và thêm thuộc tính color
+    const schedulesWithColors = schedules_data.map((item) => ({
+      ...item,
+      // Đảm bảo lấy màu dựa trên tên task, nếu không có tên thì để mặc định
+      color: getTaskColor(item.task_name || item.name || "Default")
+    }));
+
+    // 2. Cập nhật vào state
+    setSchedules(schedulesWithColors);
+    
+  }, [schedules_data]);
+
+  console.log(schedules)
+  useEffect(() => {
+    if (!schedules_data) return;
+
     // Chặn đồng bộ nếu đang kéo thả HOẶC đang chờ mutation hoàn tất
     if (dragState || isMutatingRef.current) return;
 
@@ -48,7 +64,6 @@ export default function Schedule() {
       ...item,
       color: getTaskColor(item.task_name)
     }));
-
     setSchedules(schedulesWithColors);
   }, [schedules_data, dragState]);
 
@@ -112,7 +127,7 @@ export default function Schedule() {
 
   const handleAddTask = (dateStr, hour) => {
     if (dragState) return;
-    const newId = Date.now();
+    const newId = Math.floor(Math.random() * 1000000);
     const name = taskName[0] || "New Task";
 
     const newTask = {
@@ -181,7 +196,7 @@ export default function Schedule() {
 
     isMutatingRef.current = true;
     const { color, ...apiPayload } = uiTask;
-    
+    console.log(apiPayload)
     updateSchedule(apiPayload, {
         onSettled: () => {
             setTimeout(() => { isMutatingRef.current = false; }, 1000);

@@ -9,6 +9,7 @@ export const SettingProvider = ({ children }) => {
 
   const { data: setting, isLoading } = useSetting.getSetting(!!user);
   const { mutate: updateSetting } = useSetting.updateSetting();
+
   const [formData, setFormData] = useState({
     dark_mode: false,
     activate: false,
@@ -20,7 +21,7 @@ export const SettingProvider = ({ children }) => {
     if (setting) {
       setFormData(setting);
     }
-  }, [isLoading]);
+  }, [setting]);
 
   useEffect(() => {
     if (formData.dark_mode) {
@@ -31,23 +32,24 @@ export const SettingProvider = ({ children }) => {
   }, [formData.dark_mode]);
 
   const handleToggle = (key) => {
-    setFormData((prev) => {
-      const newValue = !prev[key];
-      const updatedData = { ...prev, [key]: newValue };
+      // 1. Tạo bản cập nhật mới
+      const updatedValue = !formData[key];
+      const newFormData = { ...formData, [key]: updatedValue };
 
-      updateSetting(updatedData);
+      // 2. Cập nhật Local State ngay lập tức để UI mượt (Optimistic Update)
+      setFormData(newFormData);
 
-      return updatedData;
-    });
+      // 3. Gửi lên Server
+      updateSetting(newFormData);
   };
 
   const toggleTheme = (e) => {
-    e?.preventDefault();
+    e?.stopPropagation();
     handleToggle("dark_mode");
   };
 
   const toggleAutoSchedule = (e) => {
-    e?.preventDefault();
+    e?.stopPropagation();
     handleToggle("auto_schedule");
   };
 

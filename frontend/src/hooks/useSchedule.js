@@ -19,6 +19,8 @@ function useDeleteSchedule(){
         onSuccess: (success) => {
             toast.success(success.message);
             queryClient.invalidateQueries({queryKey: ["schedules"]});
+            queryClient.invalidateQueries({queryKey: ["task"]});
+            queryClient.invalidateQueries({queryKey: ["task-name"]});
         },
         onError: (error) => {
             const message = error?.response?.data?.message || "Error adding new schedules";

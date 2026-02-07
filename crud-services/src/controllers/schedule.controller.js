@@ -77,19 +77,23 @@ class ScheduleController{
             date, 
             start_time, 
             end_time, 
+            task_id,
+            task_name
         } = req.body
-
+        
         const user_id = getUserId(req)
         if (!user_id || isNaN(user_id)) {
             return res.status(StatusCodes.BAD_REQUEST).json({
             message: 'Invalid id'
         })}
         const schedule = await services.updateSchedule(
+            id,
             date,
             start_time,
             end_time,
+            task_id,
+            task_name,
             user_id,
-            id
         )
         return res.status(StatusCodes.ACCEPTED).json({
             "messages": "Delete schedule successfully",
