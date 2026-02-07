@@ -10,9 +10,10 @@ const TASK_COLORS = [
   'bg-violet-600 dark:bg-violet-500',
   'bg-amber-600 dark:bg-amber-500',
   'bg-rose-600 dark:bg-rose-500',
+  'bg-cyan-600 dark:bg-cyan-500',  
+  'bg-orange-600 dark:bg-orange-500',
 ];
 
-//Note: Cái để định vị update là taskname
 export default function Schedule() {
   const {data: task_name_data, isLoading: isLoadingTaskName} = useTask.getTaskName()
   const {data: schedules_data, isLoading: isLoadingSchedules} = useSchedule.getAllSchedule()
@@ -23,38 +24,48 @@ export default function Schedule() {
   const [viewType, setViewType] = useState('weekly')
   const [currentDate, setCurrentDate] = useState(new Date())
   const [schedules, setSchedules] = useState([])
-
   const [taskName, setTaskName] = useState([])
+  const [dragState, setDragState] = useState(null);
+
+  const getTaskColor = (name) => {
+    let hash = 0;
+    const str = String(name || "Default");
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return TASK_COLORS[Math.abs(hash) % TASK_COLORS.length];
+  };
+
   useEffect(() => {
     if (!schedules_data) return;
-
-    const schedulesWithColors = schedules_data.map((item, index) => ({
+    const schedulesWithColors = schedules_data.map((item) => ({
       ...item,
-      color: TASK_COLORS[index % TASK_COLORS.length]
+      color: getTaskColor(item.task_name)
     }));
-
     setSchedules(schedulesWithColors);
   }, [schedules_data]);
 
   useEffect(() => {
-    if(!task_name_data){
-        return;
-      }
+    if(!task_name_data) return;
       setTaskName(task_name_data)
   }, [task_name_data, isLoadingTaskName])
 
-  const [dragState, setDragState] = useState(null);
 
   const timeToMinutes = (time) => {
+    if (!time) return 0;
     const [h, m] = time.split(':').map(Number)
     return h * 60 + m
   }
-  const formatLocalDate = (date) => {
+
+  const formatLocalDate = (dateInput) => {
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) return ""; 
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
+
   const minutesToTime = (totalMinutes) => {
     const mins = Math.max(0, Math.min(24 * 60 - 15, totalMinutes));
     const h = Math.floor(mins / 60);
@@ -67,6 +78,23 @@ export default function Schedule() {
     return 'bg-slate-50 dark:bg-slate-900/30'
   }
 
+  const isColliding = (targetTask, allTasks) => {
+    const targetDate = formatLocalDate(targetTask.date);
+    const targetStart = timeToMinutes(targetTask.start_time);
+    const targetEnd = timeToMinutes(targetTask.end_time);
+
+    return allTasks.some(other => {
+      if (other.id === targetTask.id) return false;
+      
+      if (formatLocalDate(other.date) !== targetDate) return false;
+      
+      const otherStart = timeToMinutes(other.start_time);
+      const otherEnd = timeToMinutes(other.end_time);
+
+      return (targetStart < otherEnd && targetEnd > otherStart);
+    });
+  };
+
   const navigate = (direction) => {
     const newDate = new Date(currentDate);
     if (viewType === 'weekly') {
@@ -77,19 +105,28 @@ export default function Schedule() {
     setCurrentDate(newDate);
   }
 
-  const handleAddTask = (date, hour) => {
+  const handleAddTask = (dateStr, hour) => {
     if (dragState) return;
-    const newId = Date.now(); // Dùng timestamp làm ID tạm thời sẽ an toàn hơn
+    const newId = Date.now();
+    const name = taskName[0] || "New Task";
+
     const newTask = {
-      task_name: taskName[0] || "New Task", 
+      id: newId,
+      task_name: name, 
       start_time: hour !== undefined ? `${String(hour).padStart(2, '0')}:00` : "09:00", 
       end_time: hour !== undefined ? `${String(hour + 1).padStart(2, '0')}:00` : "10:00",
-      date: date, 
+      date: dateStr, 
+      color: getTaskColor(name) 
     };
-    setSchedules([...schedules, {...newTask, id: newId, color: TASK_COLORS[newId % TASK_COLORS.length]}]);
+
+    if (isColliding(newTask, schedules)) {
+        return; 
+    }
+
+    setSchedules([...schedules, newTask]);
     addSchedule(newTask);
   };
-  // --- LOGIC KÉO THẢ & RESIZE ---
+
   const onMouseDown = (e, taskId, type) => {
     e.stopPropagation(); 
     const task = schedules.find(t => t.id === taskId);
@@ -101,40 +138,42 @@ export default function Schedule() {
       initialMouseX: e.clientX,
       initialTop: (timeToMinutes(task.start_time) / 60) * 80,
       initialHeight: ((timeToMinutes(task.end_time) - timeToMinutes(task.start_time)) / 60) * 80,
-      initialDate: task.date
+      initialDate: formatLocalDate(task.date), 
+      originalTask: { ...task }
     });
   };
+
   const handleDeleteSchedule = (e, t) => {
     e.stopPropagation(); 
-    const taskId = t.id;
     setSchedules(schedules.filter(tk => tk.id !== t.id));
-    deleteSchedule(taskId)
+    deleteSchedule(t.id);
   }
+
   const handleUpdateSchedule = (e, t) => {
-      setSchedules(prev => prev.map(tk => tk.id === t.id ? { ...tk, task_name: e.target.value } : tk))
-      const updatedData = {
-        ...t,                 
-        task_name: e.target.value   
-      };
-      updateSchedule(updatedData)
+      const newName = e.target.value;
+      const updatedTask = { ...t, task_name: newName, color: getTaskColor(newName) };
+      
+      setSchedules(prev => prev.map(tk => tk.id === t.id ? updatedTask : tk))
+      updateSchedule(updatedTask)
   }
-  //Hàm này mới sửa nha
+
   const calculateTaskChange = (task, dragState, deltaY, deltaX, hourPixels, viewType) => {
     let { start_time: newStartTime, end_time: newEndTime, date: newDate } = task;
 
     if (dragState.type === 'move') {
       const newTop = dragState.initialTop + deltaY;
       newStartTime = minutesToTime((newTop / hourPixels) * 60);
-      const duration = timeToMinutes(task.end_time) - timeToMinutes(task.start_time);
+      
+      const duration = timeToMinutes(dragState.originalTask.end_time) - timeToMinutes(dragState.originalTask.start_time);
       newEndTime = minutesToTime(timeToMinutes(newStartTime) + duration);
 
       if (viewType === 'weekly') {
-        const dayDelta = Math.round(deltaX / 150);
+        const colWidth = (window.innerWidth - 64) / 7; 
+        const dayDelta = Math.round(deltaX / colWidth);
+
         const d = new Date(dragState.initialDate);
         d.setDate(d.getDate() + dayDelta);
-        
-        // FIX: Dùng hàm format local thay vì toISOString
-        newDate = d.toISOString().split('T')[0]
+        newDate = formatLocalDate(d);
       }
     } else if (dragState.type === 'resize-bottom') {
       const newHeight = Math.max(20, dragState.initialHeight + deltaY);
@@ -147,33 +186,34 @@ export default function Schedule() {
 
     return { start_time: newStartTime, end_time: newEndTime, date: newDate };
   };
+
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!dragState) return;
-
       const deltaY = e.clientY - dragState.initialMouseY;
       const deltaX = e.clientX - dragState.initialMouseX;
       const hourPixels = 80;
 
       setSchedules(prev => prev.map(task => {
         if (task.id !== dragState.taskId) return task;
-        
-        // Sử dụng hàm tính toán đã tách riêng
         const updates = calculateTaskChange(task, dragState, deltaY, deltaX, hourPixels, viewType);
         return { ...task, ...updates };
       }));
     };
 
-    const handleMouseUp = async () => {
+    const handleMouseUp = () => {
       if (!dragState) return;
-
       const finalTask = schedules.find(t => t.id === dragState.taskId);
-      console.log(finalTask)
-      if(finalTask){
-        console.log(finalTask)
-        updateSchedule(finalTask)
+      
+      if (finalTask) {
+        if (isColliding(finalTask, schedules)) {
+            setSchedules(prev => prev.map(t => 
+                t.id === dragState.taskId ? dragState.originalTask : t
+            ));
+        } else {
+            updateSchedule({ ...finalTask, date: formatLocalDate(finalTask.date) });
+        }
       }
-
       setDragState(null);
     };
 
@@ -181,14 +221,12 @@ export default function Schedule() {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     }
-
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [dragState, viewType]); 
+  }, [dragState, viewType, schedules]); 
 
-  // --- WEEKLY VIEW ---
   const renderWeeklyView = () => {
     const weekStart = new Date(currentDate); 
     const day = weekStart.getDay(); 
@@ -205,7 +243,7 @@ export default function Schedule() {
         <div className="flex pl-16 bg-slate-100/50 dark:bg-slate-900/80 border-b border-border sticky top-0 z-30 backdrop-blur-md">
           {weekDays.map(d => {
             return (
-              <div key={d.toISOString()} className="flex-1 p-3 text-center border-r border-border/50 last:border-r-0">
+              <div key={formatLocalDate(d)} className="flex-1 p-3 text-center border-r border-border/50 last:border-r-0">
                 <div className="font-bold text-xs text-muted-foreground uppercase tracking-wider">
                   {d.toLocaleDateString('en-US', { weekday: 'short' })}
                 </div>
@@ -216,7 +254,7 @@ export default function Schedule() {
         </div>
         <div className="flex-1 overflow-y-auto min-h-0">
           <div className="flex min-h-max relative">
-            <div className="w-16 flex-shrink-0 z-10 sticky left-0">
+            <div className="w-16 flex-shrink-0 z-10 sticky left-0 bg-white dark:bg-slate-950">
               {hours.map(h => (
                 <div key={h} className={`h-20 border-b border-border/40 text-[10px] flex items-center justify-center font-medium text-muted-foreground/60 ${getHourClass(h)}`}>
                   {String(h).padStart(2, '0')}:00
@@ -225,7 +263,7 @@ export default function Schedule() {
             </div>
             <div className="flex-1 flex">
               {weekDays.map((d, dayIdx) => {
-                const dateStr = d.toISOString().split('T')[0];
+                const dateStr = formatLocalDate(d);
                 return (
                   <div key={dateStr} className={`flex-1 relative min-w-[100px] ${dayIdx < 6 ? 'border-r border-border/30' : ''}`}>
                     {hours.map(h => (
@@ -234,10 +272,7 @@ export default function Schedule() {
                         onClick={() => handleAddTask(dateStr, h)}
                       />
                     ))}
-                    {schedules.filter(t => {
-                        const taskDateOnly = t.date.split('T')[0]; 
-                        return taskDateOnly === dateStr;
-                      }).map(t => (
+                    {schedules.filter(t => formatLocalDate(t.date) === dateStr).map(t => (
                       <div 
                         key={t.id} 
                         onMouseDown={(e) => onMouseDown(e, t.id, 'move')}
@@ -272,11 +307,12 @@ export default function Schedule() {
                             </div>
                         </div>
                         
+                        {/* NÚT XÓA ĐÃ ĐƯỢC RESTORE VỀ NGUYÊN BẢN */}
                         <button 
                           onMouseDown={(e) => e.stopPropagation()} 
                           onClick={(e) => handleDeleteSchedule(e, t)}
                           className="absolute top-1 right-1 h-6 w-6 flex items-center justify-center rounded-full bg-black/20 text-white hover:bg-red-500 hover:text-white hover:scale-110 transition-all opacity-0 group-hover:opacity-100 z-50 cursor-pointer"
-                          task_name="Delete task"
+                          title="Delete task"
                         >
                           <X size={14} strokeWidth={3} />
                         </button>
@@ -296,7 +332,6 @@ export default function Schedule() {
       </div>
     )
   }
-
 
   const renderMonthlyView = () => {
     const year = currentDate.getFullYear();
@@ -323,12 +358,9 @@ export default function Schedule() {
         </div>
         <div className="flex-1 grid grid-cols-7 grid-rows-6">
           {calendarDays.map((date, idx) => {
-            const dateStr = date.toISOString().split('T')[0];
+            const dateStr = formatLocalDate(date);
             const isCurrentMonth = date.getMonth() === month;
-            const dayTasks = schedules.filter(t => {
-              const taskDateOnly = t.date.split('T')[0]; 
-              return taskDateOnly === dateStr;
-            });
+            const dayTasks = schedules.filter(t => formatLocalDate(t.date) === dateStr);
             return (
               <div key={idx} onClick={() => handleAddTask(dateStr)}
                 className={`relative border-r border-b border-border/30 p-2 transition-all cursor-pointer hover:bg-blue-500/5 ${isCurrentMonth ? 'bg-white dark:bg-slate-950' : 'bg-slate-50/50 dark:bg-black opacity-40'}`}>
@@ -338,9 +370,9 @@ export default function Schedule() {
                     <div key={t.id} className={`group relative text-[10px] pl-1.5 pr-6 py-0.5 rounded shadow-sm text-white truncate font-medium ${t.color}`}>
                       {t.task_name}
                       <button 
-                         onMouseDown={(e) => e.stopPropagation()}
-                         onClick={(e) => handleDeleteSchedule(e, t)}
-                         className="absolute right-0 top-0 bottom-0 w-5 flex items-center justify-center bg-black/20 hover:bg-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => handleDeleteSchedule(e, t)}
+                          className="absolute right-0 top-0 bottom-0 w-5 flex items-center justify-center bg-black/20 hover:bg-red-500 opacity-0 group-hover:opacity-100 transition-all">
                         <X size={10} strokeWidth={3} />
                       </button>
                     </div>
@@ -354,9 +386,8 @@ export default function Schedule() {
     );
   }
 
-  if(isLoadingSchedules || isLoadingTaskName){
-    return <></>
-  }
+  if(isLoadingSchedules || isLoadingTaskName) return null;
+
   return (
     <div className="p-4 md:p-8 bg-slate-50 dark:bg-[#0a0a0a] h-screen flex flex-col overflow-hidden text-slate-900 dark:text-slate-100">
       <div className="flex items-center justify-between mb-6 flex-shrink-0">
