@@ -1,5 +1,4 @@
-@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImR1Y3RyaTA5ODFAZ21haWwuY29tIiwidXNlcl9pZCI6MSwiaWF0IjoxNzcwNDQyMjM5LCJleHAiOjE3NzA0NDMxMzl9._zb2q-n2Eae3uXcaClgmOmWMdyGLZDBsyKh_Y5P9Cnw
-
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImR1Y3RyaTA5ODFAZ21haWwuY29tIiwidXNlcl9pZCI6MSwiaWF0IjoxNzcwNDQ1MTIyLCJleHAiOjE3NzA0NDYwMjJ9.FhNNlAFkS3rT7SSJHDif38MJ_WXf7yIGdV3LAAj-N4c
 ###1. POST working-time
 POST http://localhost:3002/working-time
 Content-Type: application/json

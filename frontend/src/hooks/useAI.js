@@ -3,11 +3,10 @@ import AIServices from "@/services/ai.services";
 import {toast} from 'react-toastify'
 import {STALE_10_MIN} from '@/constant/constant'
 
-function useGetWorkingTime() {
-    return useQuery({
-        queryKey: ['working-time'],
-        queryFn: AIServices.getWorkingTime,
-        staleTime: STALE_10_MIN
+function usePostWorkingTime(){
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (data) => AIServices.postWorkingTime(data),
     })
 }
 
@@ -20,6 +19,6 @@ function useGetSchedule() {
 }
 
 export default {
-    getWorkingTime: useGetWorkingTime,
+    postWorkingTime: usePostWorkingTime,
     getSchedule: useGetSchedule
 }

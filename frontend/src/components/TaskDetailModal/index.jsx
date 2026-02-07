@@ -1,20 +1,28 @@
-'use client';
-
 import React, { useEffect } from "react"
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import useAI from "@/hooks/useAI";
+import {useMode} from '@/context/setting.context'
 
+//Logic cơ bản AI
+//Điều kiện: 
+// Name không được trống, khi nhập name thì keyUP sẽ bắt đầu call API để predict working_time
+// Tương tự với description như có thể trống, khi nhập description thì keyUP sẽ bắt đầu call API
+// Có phân biệt giữa người nhập và người dùng tab. Nếu như người dùng thật sự nhập thì để có luôn
+// Có giao diện chữ predict mờ mờ gợi ý, người dùng tab thì mới fill in.
 export default function TaskDetailModal({ onClose, onSave, isNew = false, task = null }) {
+  const {isAutoSchedule} = useMode()
+  const {mutate: predictWorkingTime} = useAI.postWorkingTime()
+
   const [formData, setFormData] = useState(task || {
     name: '',
     description: '',
     working_time: 0, 
     deadline: new Date()
   });
-  console.log(formData)
   useEffect(() => {
     if (task) {
       setFormData(task);
@@ -36,6 +44,11 @@ export default function TaskDetailModal({ onClose, onSave, isNew = false, task =
     onClose()
   }
   const [deadline, setDeadline] = useState(task?.deadline ? new Date(task.deadline) : new Date());
+
+  useEffect(() => {
+      if(!task) return;
+      setDeadline(task.deadline)
+  }, [task])
   const handleDeadlineChange = (date) => {
     setDeadline(date);
     setFormData(prev => ({ ...prev, deadline: date }));
@@ -46,7 +59,10 @@ export default function TaskDetailModal({ onClose, onSave, isNew = false, task =
     <div className={`fixed inset-0 ${task ? 'bg-black/50' : 'hidden'} flex items-center justify-center z-50 p-4`}>
       <Card className="w-full max-w-2xl p-6 bg-card border border-border">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-foreground">{isNew ? 'Add New Task' : 'Task Details'}</h2>
+          <div className="flex flex-col gap-2">
+            <h2 className="text-2xl font-bold text-foreground">{isNew ? 'Add New Task' : 'Task Details'}</h2>
+            <p className="text-sm text-muted-foreground">Waiting at least 5 second to predict working time after entering task name</p>
+          </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-secondary transition-colors rounded-md"

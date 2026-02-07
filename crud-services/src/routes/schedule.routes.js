@@ -1,15 +1,15 @@
 import express from 'express'
 import ScheduleController from '#@/controllers/schedule.controller.js'
-
+import { authenticateToken } from '#@/middleware/auth.middleware.js'
 const router = express.Router()
 
-router.get('/', ScheduleController.getSchedule)
-router.get('/:id', ScheduleController.getScheduleByID)
+router.get('/', authenticateToken, ScheduleController.getSchedule)
+router.get('/:id', authenticateToken, ScheduleController.getScheduleByID)
 
-router.post('/', ScheduleController.createSchedule)
+router.post('/', authenticateToken, ScheduleController.createSchedule)
 
-router.patch('/:id', ScheduleController.updateSchedule)
+router.patch('/:id', authenticateToken, ScheduleController.updateSchedule)
 
-router.delete('/:id', ScheduleController.deleteSchedule)
+router.delete('/:id', authenticateToken, ScheduleController.deleteSchedule)
 
 export default router

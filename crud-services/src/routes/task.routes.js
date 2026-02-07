@@ -1,18 +1,19 @@
 import express from 'express'
 import TaskController from '#@/controllers/task.controller.js'
+import { authenticateToken } from '#@/middleware/auth.middleware.js'
 
 const router = express.Router()
 
-router.get('/', TaskController.getTask)
-router.get('/tasks', TaskController.getAllTasks)
-router.get('/task-history/', TaskController.getTaskHistory)
-router.get('/task-name/', TaskController.getTaskName)
-router.get('/:id', TaskController.getTaskByID)
+router.get('/', authenticateToken, TaskController.getTask)
+router.get('/tasks', authenticateToken, TaskController.getAllTasks)
+router.get('/task-history/', authenticateToken, TaskController.getTaskHistory)
+router.get('/task-name/', authenticateToken, TaskController.getTaskName)
+router.get('/:id', authenticateToken, TaskController.getTaskByID)
 
-router.post('/', TaskController.createTask)
+router.post('/', authenticateToken, TaskController.createTask)
 
-router.patch('/:id', TaskController.updateTask)
+router.patch('/:id', authenticateToken, TaskController.updateTask)
 
-router.delete('/:id', TaskController.deleteTask)
+router.delete('/:id', authenticateToken, TaskController.deleteTask)
 
 export default router
