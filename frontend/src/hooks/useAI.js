@@ -13,7 +13,7 @@ function usePostWorkingTime(){
 function useGetSchedule() {
     return useQuery({
         queryKey: ['ai-schedules'],
-        queryFn: AIServices.getSchedule,
+        queryFn: (id) => AIServices.getSchedule(id),
         staleTime: STALE_10_MIN
     })
 }

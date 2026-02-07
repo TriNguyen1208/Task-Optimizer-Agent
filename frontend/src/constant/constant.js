@@ -49,7 +49,7 @@ const API_ROUTES = {
     },
     ai: {
         working_time: AI_WORKING_TIME,
-        schedule: AI_SCHEDULE
+        schedule: (task_id) => `${AI_SCHEDULE}/${task_id}`,
     }
 }
 const STALE_10_MIN = 10 * 60 * 1000

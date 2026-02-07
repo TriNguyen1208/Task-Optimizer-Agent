@@ -33,9 +33,10 @@ class ScheduleController{
             date,
             start_time,
             end_time,
+            task_id, 
             task_name,
         } = req.body;
-
+        
         const user_id = getUserId(req)
         console.log(user_id)
         if (!user_id || isNaN(user_id)) {
@@ -47,6 +48,7 @@ class ScheduleController{
             date,
             start_time,
             end_time,
+            task_id,
             task_name,
             user_id
         )

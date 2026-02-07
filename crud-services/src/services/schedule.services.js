@@ -105,22 +105,65 @@ class ScheduleServices{
         const {rows} = await db.query(queryText, [user_id, task_id])
         return rows
     }
-    async createSchedule(date, start_time, end_time, task_name, user_id) {
-        // 1. Lấy ID từ tên task
-        const queryTextGetID = `
-            SELECT id
-            FROM task
-            WHERE name = $1
-            LIMIT 1
-        `;
-        const { rows: taskRows } = await db.query(queryTextGetID, [task_name]);
+    // async createSchedule(date, start_time, end_time, task_name, user_id) {
+    //     // 1. Lấy ID từ tên task
+    //     const queryTextGetID = `
+    //         SELECT id
+    //         FROM task
+    //         WHERE name = $1
+    //         LIMIT 1
+    //     `;
+    //     const { rows: taskRows } = await db.query(queryTextGetID, [task_name]);
 
-        // Kiểm tra xem task có tồn tại không trước khi insert
-        if (taskRows.length === 0) {
-            throw new Error(`Task với tên "${task_name}" không tồn tại.`);
+    //     // Kiểm tra xem task có tồn tại không trước khi insert
+    //     if (taskRows.length === 0) {
+    //         throw new Error(`Task với tên "${task_name}" không tồn tại.`);
+    //     }
+
+    //     const taskId = taskRows[0].id;
+
+    //     // 2. Insert vào bảng schedule
+    //     const queryText = `
+    //         INSERT INTO schedule (date, start_time, end_time, task_id, user_id)
+    //         VALUES ($1, $2, $3, $4, $5)
+    //         RETURNING *
+    //     `;
+        
+    //     const { rows } = await db.query(queryText, [
+    //         date,
+    //         start_time,
+    //         end_time,
+    //         taskId, // Đã sửa từ task_id thành taskId
+    //         user_id
+    //     ]);
+
+    //     return rows[0];
+    // }
+    async createSchedule(
+        date, start_time, end_time, task_id, task_name, user_id 
+    ) {
+        let finalTaskId = task_id;
+
+        // 1. Nếu không có task_id nhưng có task_name, đi tìm ID từ tên
+        if (!finalTaskId && task_name) {
+            const queryTextGetID = `
+                SELECT id
+                FROM task
+                WHERE name = $1 AND user_id = $2
+                LIMIT 1
+            `;
+            const { rows: taskRows } = await db.query(queryTextGetID, [task_name, user_id]);
+
+            if (taskRows.length === 0) {
+                throw new Error(`Task với tên "${task_name}" không tồn tại.`);
+            }
+            finalTaskId = taskRows[0].id;
         }
 
-        const taskId = taskRows[0].id;
+        // Kiểm tra cuối cùng xem có ID để insert chưa
+        if (!finalTaskId) {
+            throw new Error("Cần cung cấp ít nhất task_id hoặc task_name.");
+        }
 
         // 2. Insert vào bảng schedule
         const queryText = `
@@ -133,7 +176,7 @@ class ScheduleServices{
             date,
             start_time,
             end_time,
-            taskId, // Đã sửa từ task_id thành taskId
+            finalTaskId,
             user_id
         ]);
 

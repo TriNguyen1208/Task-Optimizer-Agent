@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card'
 import TaskDetailModal from '@/components/TaskDetailModal'
 import useTask from '@/hooks/useTask'
 import calculateTimeLeft from '@/utils/calculate_time'
+import { useMode } from '@/context/setting.context'
 
 //Ý tưởng là đầu tiên fetch data từ database về sau đó render lên, fetch những thằng nào chưa finish thôi
 //Có thể là get 1 task cụ thể, tạo 1 task cụ thể và sửa 1 task cụ thể
@@ -13,7 +14,7 @@ export default function Task() {
   const {mutate: updateTask} = useTask.updateTask()
   const {mutate: addTask} = useTask.addTask()
   const [tasks, setTasks] = useState([])
-
+  const {isAutoSchedule} = useMode()
   const TimeLeftBadge = ({ deadline }) => {
     const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(deadline));
 
@@ -148,7 +149,7 @@ export default function Task() {
         onSave={(newTask) => {
           setTasks([...tasks, newTask])
           setShowAddModal(false)
-          addTask(newTask)
+          addTask({task: newTask, isAutoSchedule})
         }}
         isNew
         task={showAddModal ? { name: '', description: '', working_time: 0, deadline: ''} : null} 

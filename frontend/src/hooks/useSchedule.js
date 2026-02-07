@@ -30,7 +30,7 @@ function useDeleteSchedule(){
 function useAddSchedule(){
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: (schedule) => ScheduleServices.addSchedule(schedule),
+        mutationFn: (schedule, isAutoSchedule) => ScheduleServices.addSchedule(schedule),
         onSuccess: (success) => {
             toast.success(success.message);
             queryClient.invalidateQueries({queryKey: ["schedules"]});

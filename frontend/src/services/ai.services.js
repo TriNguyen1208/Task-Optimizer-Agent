@@ -7,8 +7,8 @@ async function postWorkingTime(data)
     const res = await axios.post(API_ROUTES.ai.working_time, data);
     return res.data;
 }
-async function getSchedule(){
-    const res = await axios.get(API_ROUTES.ai.schedule);
+async function getSchedule(id){
+    const res = await axios.get(API_ROUTES.ai.schedule(id));
     return res.data;
 }
 

@@ -23,7 +23,7 @@ function useGetTask(){
 function useAddTask(){
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: (task) => TaskServices.addTask(task),
+        mutationFn: ({task, isAutoSchedule}) => TaskServices.addTask(task, isAutoSchedule),
         onSuccess: (success) => {
             toast.success(success.message);
             queryClient.invalidateQueries({queryKey: ["task"]});
