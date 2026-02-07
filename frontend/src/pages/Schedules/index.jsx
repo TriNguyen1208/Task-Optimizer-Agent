@@ -10,7 +10,7 @@ const TASK_COLORS = [
   'bg-violet-600 dark:bg-violet-500',
   'bg-amber-600 dark:bg-amber-500',
   'bg-rose-600 dark:bg-rose-500',
-  'bg-cyan-600 dark:bg-cyan-500',  
+  'bg-cyan-600 dark:bg-cyan-500',
   'bg-orange-600 dark:bg-orange-500',
 ];
 
@@ -27,6 +27,7 @@ export default function Schedule() {
   const [taskName, setTaskName] = useState([])
   const [dragState, setDragState] = useState(null);
 
+  // Hash màu theo tên task để cố định màu
   const getTaskColor = (name) => {
     let hash = 0;
     const str = String(name || "Default");
@@ -57,6 +58,7 @@ export default function Schedule() {
     return h * 60 + m
   }
 
+  // Format ngày theo Local Time để tránh lệch múi giờ
   const formatLocalDate = (dateInput) => {
     const date = new Date(dateInput);
     if (isNaN(date.getTime())) return ""; 
@@ -78,6 +80,7 @@ export default function Schedule() {
     return 'bg-slate-50 dark:bg-slate-900/30'
   }
 
+  // Check va chạm
   const isColliding = (targetTask, allTasks) => {
     const targetDate = formatLocalDate(targetTask.date);
     const targetStart = timeToMinutes(targetTask.start_time);
@@ -85,7 +88,6 @@ export default function Schedule() {
 
     return allTasks.some(other => {
       if (other.id === targetTask.id) return false;
-      
       if (formatLocalDate(other.date) !== targetDate) return false;
       
       const otherStart = timeToMinutes(other.start_time);
@@ -109,19 +111,17 @@ export default function Schedule() {
     if (dragState) return;
     const newId = Date.now();
     const name = taskName[0] || "New Task";
-
+    
     const newTask = {
       id: newId,
       task_name: name, 
       start_time: hour !== undefined ? `${String(hour).padStart(2, '0')}:00` : "09:00", 
       end_time: hour !== undefined ? `${String(hour + 1).padStart(2, '0')}:00` : "10:00",
       date: dateStr, 
-      color: getTaskColor(name) 
+      color: getTaskColor(name)
     };
 
-    if (isColliding(newTask, schedules)) {
-        return; 
-    }
+    if (isColliding(newTask, schedules)) return; 
 
     setSchedules([...schedules, newTask]);
     addSchedule(newTask);
@@ -139,7 +139,7 @@ export default function Schedule() {
       initialTop: (timeToMinutes(task.start_time) / 60) * 80,
       initialHeight: ((timeToMinutes(task.end_time) - timeToMinutes(task.start_time)) / 60) * 80,
       initialDate: formatLocalDate(task.date), 
-      originalTask: { ...task }
+      originalTask: { ...task } 
     });
   };
 
@@ -149,9 +149,19 @@ export default function Schedule() {
     deleteSchedule(t.id);
   }
 
+  // --- FIX LỖI 1 NGÀY Ở ĐÂY ---
   const handleUpdateSchedule = (e, t) => {
       const newName = e.target.value;
-      const updatedTask = { ...t, task_name: newName, color: getTaskColor(newName) };
+      // QUAN TRỌNG: Format lại date trước khi update để đảm bảo nó là chuỗi YYYY-MM-DD chuẩn
+      // Nếu không format, nó có thể lấy ISO string cũ và bị lệch múi giờ khi lưu lại
+      const cleanDate = formatLocalDate(t.date);
+
+      const updatedTask = { 
+        ...t, 
+        task_name: newName, 
+        color: getTaskColor(newName),
+        date: cleanDate 
+      };
       
       setSchedules(prev => prev.map(tk => tk.id === t.id ? updatedTask : tk))
       updateSchedule(updatedTask)
@@ -173,7 +183,7 @@ export default function Schedule() {
 
         const d = new Date(dragState.initialDate);
         d.setDate(d.getDate() + dayDelta);
-        newDate = formatLocalDate(d);
+        newDate = formatLocalDate(d); 
       }
     } else if (dragState.type === 'resize-bottom') {
       const newHeight = Math.max(20, dragState.initialHeight + deltaY);
@@ -307,7 +317,6 @@ export default function Schedule() {
                             </div>
                         </div>
                         
-                        {/* NÚT XÓA ĐÃ ĐƯỢC RESTORE VỀ NGUYÊN BẢN */}
                         <button 
                           onMouseDown={(e) => e.stopPropagation()} 
                           onClick={(e) => handleDeleteSchedule(e, t)}
