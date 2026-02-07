@@ -7,6 +7,8 @@ const CRUD_STATISTICS = `${url}/crud/statistics`
 const CRUD_TASK = `${url}/crud/task`
 const CRUD_INFO = `${url}/crud/info`
 const CRUD_SCHEDULE = `${url}/crud/schedule`
+const AI_WORKING_TIME = `${url}/ai/working-time`
+const AI_SCHEDULE = `${url}/ai/schedule`
 
 const uri = (value) => {
   if (value === undefined || value === null) return '';
@@ -44,6 +46,10 @@ const API_ROUTES = {
     schedule: {
         base: CRUD_SCHEDULE,
         base_id: (id) => `${CRUD_SCHEDULE}/${id}`
+    },
+    ai: {
+        working_time: AI_WORKING_TIME,
+        schedule: AI_SCHEDULE
     }
 }
 const STALE_10_MIN = 10 * 60 * 1000

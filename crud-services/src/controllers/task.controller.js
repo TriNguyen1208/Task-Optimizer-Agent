@@ -20,6 +20,16 @@ class TaskController{
         const tasks = await services.getTask(user_id)
         return res.status(StatusCodes.OK).json(tasks)
     }
+    async getAllTasks(req, res){
+        const user_id = getUserId(req)
+        if (!user_id || isNaN(user_id)) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+            message: 'Invalid id'
+        })}
+        
+        const tasks = await services.getAllTasks(user_id)
+        return res.status(StatusCodes.OK).json(tasks)
+    }
     async getTaskHistory(req, res){
         const user_id = getUserId(req)
         if(!user_id || isNaN(user_id)){

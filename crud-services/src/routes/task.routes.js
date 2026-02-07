@@ -4,6 +4,7 @@ import TaskController from '#@/controllers/task.controller.js'
 const router = express.Router()
 
 router.get('/', TaskController.getTask)
+router.get('/tasks', TaskController.getAllTasks)
 router.get('/task-history/', TaskController.getTaskHistory)
 router.get('/task-name/', TaskController.getTaskName)
 router.get('/:id', TaskController.getTaskByID)

@@ -8,13 +8,11 @@ class TaskServices{
         return TaskServices.instance
     }
     async getTask(user_id){
-        return await this.getAllTasks(user_id)
-    }
-    async getTaskHistory(user_id){
         const queryText = `
             SELECT * 
-            FROM task
-            WHERE user_id = $1 AND finished = TRUE
+            FROM task 
+            WHERE user_id = $1 AND finished = FALSE
+            ORDER BY id ASC
         `
         const {rows} = await db.query(queryText, [user_id])
         return rows
@@ -23,8 +21,16 @@ class TaskServices{
         const queryText = `
             SELECT * 
             FROM task 
-            WHERE user_id = $1 AND finished = FALSE
-            ORDER BY id ASC
+            WHERE user_id = $1
+        `
+        const {rows} = await db.query(queryText, [user_id])
+        return rows
+    }
+    async getTaskHistory(user_id){
+        const queryText = `
+            SELECT * 
+            FROM task
+            WHERE user_id = $1 AND finished = TRUE
         `
         const {rows} = await db.query(queryText, [user_id])
         return rows
