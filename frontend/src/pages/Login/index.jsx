@@ -1,189 +1,156 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {useAuth} from '@/context/auth.context'
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { useDispatch } from 'react-redux';
+import { loginUser, signupUser } from '@/services/auth.api';
+import { toast } from 'react-toastify';
+import { useEffect } from 'react';
 
 export default function Login() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [otp, setOtp] = useState('');
-  const [error, setError] = useState('');
-  const [showOTPBox, setShowOTPBox] = useState(false);
-  const { login, register, sendOTP, verifyOTP, pendingOTPEmail } = useAuth();
-  const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const [isLogin, setIsLogin] = useState(true);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
+    const location = useLocation();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setError('');
 
-    if (!email || !password) {
-      setError('Please fill in all fields');
-      return;
-    }
+    useEffect(() => {
+        if (localStorage.getItem('user')) {
+          const backTo = location.state?.from?.pathname || '/';
+          toast.error('Bạn đã đăng nhập, đăng xuất nếu muốn đăng nhập lại');
+          navigate(backTo);
+        }
+    }, [navigate]);
 
-    if (isLogin) {
-      if (login(email, password)) {
-        navigate('/');
-      } else {
-        setError('Invalid email or password');
+    //Bấm nút login
+    const handleLogin = async ({ email, password }) => {
+        try {
+            const res = await dispatch(loginUser(email, password));
+            toast.success('Login successfully');
+            navigate(location.state?.from?.pathname || '/');
+        } catch (err) {
+            const message = "Login fail";
+            toast.error(message);
+        }
+    };
+
+    const handleSignup = async ({ email, password }) => {
+        try {
+          const res = await dispatch(signupUser(email, password));
+          toast.success(res?.message || 'Login successfully');
+          navigate(location.state?.from?.pathname || '/');
+        } catch (err) {
+            const message = err?.response?.data?.message || err?.message || "Đăng nhập thất bại";
+            toast.error(message);
+        }
+    };
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      setError('');
+
+      if (!email || !password) {
+          setError('Please fill in all fields');
+          return;
+      } 
+
+      if (isLogin) {
+        await handleLogin({email, password})
+      } 
+      else {
+        if (password !== confirmPassword) {
+          setError('Passwords do not match');
+          return;
+        }
+        if (password.length < 6) {
+          setError('Password must be at least 6 characters');
+          return;
+        }
+        await handleSignup({email, password})
       }
-    } else {
-      if (password !== confirmPassword) {
-        setError('Passwords do not match');
-        return;
-      }
-      if (password.length < 6) {
-        setError('Password must be at least 6 characters');
-        return;
-      }
-      // Send OTP to email for verification
-      sendOTP(email);
-      setShowOTPBox(true);
-    }
-  };
+    };
 
-  const handleOTPSubmit = (e) => {
-    e.preventDefault();
-    setError('');
-
-    if (!otp || otp.length !== 6) {
-      setError('Please enter a valid 6-digit OTP');
-      return;
-    }
-
-    if (verifyOTP(email, otp)) {
-      if (register(email, password)) {
-        navigate('/');
-      } else {
-        setError('Failed to create account');
-      }
-    } else {
-      setError('Invalid OTP. Please try again');
-    }
-  };
-
-  const handleResendOTP = () => {
-    setError('');
-    sendOTP(email);
-    setOtp('');
-  };
-
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <div className="p-8">
-          {/* Logo */}
-          <div className="flex items-center justify-center mb-8">
-            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">TF</span>
-            </div>
-            <span className="ml-3 text-2xl font-bold text-foreground">TaskFlow</span>
-          </div>
-
-          <h2 className="text-2xl font-bold text-center mb-2 text-foreground">
-            {isLogin ? 'Welcome Back' : showOTPBox ? 'Verify Email' : 'Create Account'}
-          </h2>
-          <p className="text-center text-muted-foreground mb-6">
-            {isLogin ? 'Sign in to your account' : showOTPBox ? `Enter the OTP sent to ${email}` : 'Sign up to get started'}
-          </p>
-
-          <form onSubmit={showOTPBox ? handleOTPSubmit : handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full"
-              />
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <div className="p-8">
+            {/* Logo */}
+            <div className="flex items-center justify-center mb-8">
+              <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-lg">TF</span>
+              </div>
+              <span className="ml-3 text-2xl font-bold text-foreground">TaskFlow</span>
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
-                Password
-              </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full"
-              />
-            </div>
+            <h2 className="text-2xl font-bold text-center mb-2 text-foreground">
+              {isLogin ? 'Welcome Back' : 'Create Account'}
+            </h2>
+            <p className="text-center text-muted-foreground mb-6">
+              {isLogin ? 'Sign in to your account' : 'Sign up to get started'}
+            </p>
 
-            {!isLogin && !showOTPBox && (
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="confirm" className="block text-sm font-medium text-foreground mb-2">
-                  Confirm Password
+                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+                  Email
                 </label>
                 <Input
-                  id="confirm"
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full"
                 />
               </div>
-            )}
 
-            {showOTPBox && (
               <div>
-                <label htmlFor="otp" className="block text-sm font-medium text-foreground mb-2">
-                  One-Time Password (OTP)
+                <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
+                  Password
                 </label>
                 <Input
-                  id="otp"
-                  type="text"
-                  placeholder="000000"
-                  maxLength={6}
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                  className="w-full text-center text-2xl tracking-widest"
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full"
                 />
-                <p className="text-xs text-muted-foreground mt-2">
-                  Enter the 6-digit code sent to your email
-                </p>
               </div>
-            )}
 
-            {error && (
-              <div className="p-3 bg-destructive/10 border border-destructive rounded-lg">
-                <p className="text-sm text-destructive">{error}</p>
-              </div>
-            )}
+              {!isLogin && (
+                <div>
+                  <label htmlFor="confirm" className="block text-sm font-medium text-foreground mb-2">
+                    Confirm Password
+                  </label>
+                  <Input
+                    id="confirm"
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+              )}
 
-            <Button type="submit" className="w-full">
-              {isLogin ? 'Sign In' : showOTPBox ? 'Verify & Create Account' : 'Send OTP'}
-            </Button>
+              {error && (
+                <div className="p-3 bg-destructive/10 border border-destructive rounded-lg">
+                  <p className="text-sm text-destructive">{error}</p>
+                </div>
+              )}
 
-            {showOTPBox && (
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-2">
-                  Didn't receive the OTP?
-                </p>
-                <button
-                  type="button"
-                  onClick={handleResendOTP}
-                  className="text-sm text-primary hover:underline font-medium"
-                >
-                  Resend OTP
-                </button>
-              </div>
-            )}
-          </form>
+              <Button type="submit" className="w-full">
+                {isLogin ? 'Sign In' : 'Sign Up'}
+              </Button>
 
-          {!showOTPBox && (
+            </form>
+
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
                 {isLogin ? "Don't have an account? " : 'Already have an account? '}
@@ -201,24 +168,8 @@ export default function Login() {
                 </button>
               </p>
             </div>
-          )}
-
-          {showOTPBox && (
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => {
-                  setShowOTPBox(false);
-                  setOtp('');
-                  setError('');
-                }}
-                className="text-sm text-primary hover:underline font-medium"
-              >
-                Back to registration
-              </button>
-            </div>
-          )}
-        </div>
-      </Card>
-    </div>
-  );
+          </div>
+        </Card>
+      </div>
+    );
 }

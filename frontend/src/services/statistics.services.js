@@ -1,10 +1,9 @@
-import axios from "axios";
-import { Statistics } from "../@types/statistics";
-import {url_manage} from "@/src/constant/constant";
+import axios from "@/services/axios.instance"
+import {API_ROUTES, url} from "@/constant/constant";
 
 class StatisticsServices {
   static async getStatistic(){
-    const res = await axios.get(`${url_manage}/statistics`);
+    const res = await axios.get(API_ROUTES.statistics.base);
     return res.data;
   }
 }

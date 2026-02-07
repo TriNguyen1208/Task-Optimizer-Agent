@@ -12,6 +12,7 @@ const config_dev = {
     port: 3000,
   }
 };
+
 const config_pro = {
   db: {
     connectionString: process.env.DATABASE_URL,
@@ -20,7 +21,7 @@ const config_pro = {
     }
   },
   app: {
-    port: 3000,
+    port: 3001,
   }
 };
 

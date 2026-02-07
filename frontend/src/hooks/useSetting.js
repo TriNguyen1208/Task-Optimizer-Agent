@@ -4,31 +4,35 @@ import {toast} from 'react-toastify'
 import {STALE_10_MIN} from '@/constant/constant'
 import SettingServices from "@/services/setting.services";
 
-class SettingHook {
-    static useUpdateSetting() {
-        const queryClient = useQueryClient()
-        return useMutation({
-            mutationFn: (setting) => SettingsServices.updateSetting(setting),
-            onSuccess: (success) => {
-                toast.success(success.message)
-                queryClient.invalidateQueries({
-                    queryKey: ['setting']
-                })
-            },
-            onError: (error) => {
-                const message = error?.response?.data?.message || "Error updating setting";
-                toast.error(message);
-            }
-        })
-    }
 
-    static useGetSetting() {
-        return useQuery({
-            queryKey: ['setting'],
-            queryFn: () => SettingServices.getSetting(),
-            staleTime: STALE_10_MIN
-        })
-    }
+function useUpdateSetting(){
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (setting) => SettingsServices.updateSetting(setting),
+        onSuccess: (success) => {
+            toast.success(success.message)
+            queryClient.invalidateQueries({
+                queryKey: ['setting']
+            })
+        },
+        onError: (error) => {
+            const message = error?.response?.data?.message || "Error updating setting";
+            toast.error(message);
+        }
+    })
 }
+function useGetSetting(enabled = true) {
+    return useQuery({
+        queryKey: ['setting'],
+        queryFn: SettingServices.getSetting,
+        staleTime: STALE_10_MIN,
+        enabled: enabled
+    }
+)}
 
-export default SettingHook
+
+
+export default {
+    updateSetting: useUpdateSetting,
+    getSetting: useGetSetting
+}

@@ -1,23 +1,10 @@
 import { useState } from 'react'
 import { Shield, RotateCw, Bell, Moon, Sun } from 'lucide-react' 
-import { useTheme } from "@/context/theme.context";
+import { useMode } from "@/context/setting.context";
 
 export default function Setting() {
-  const {isDarkMode, toggleTheme} = useTheme()
-
-  const [settings, setSettings] = useState({
-    activate: true,
-    autoSchedule: false,
-    notification: true,
-  })
-
-  const toggleSetting = (key) => {
-    setSettings((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }))
-  }
-
+  const {isDarkMode, toggleTheme, isAutoSchedule, toggleAutoSchedule} = useMode()
+  
   const ToggleSwitch = ({ value, onChange }) => (
     <button
       onClick={onChange}
@@ -71,24 +58,6 @@ export default function Setting() {
           </div>
         </Card>
 
-        <Card className="p-6 border-l-4 border-l-blue-500 border border-border">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-md">
-                <Shield className="w-6 h-6 text-blue-600 dark:text-blue-300" />
-              </div>
-              <div>
-                <h3 className="font-bold text-foreground">Activate</h3>
-                <p className="text-sm text-muted-foreground">Enable TaskFlow features</p>
-              </div>
-            </div>
-            <ToggleSwitch
-              value={settings.activate}
-              onChange={() => toggleSetting('activate')}
-            />
-          </div>
-        </Card>
-
         <Card className="p-6 border-l-4 border-l-purple-500 border border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -101,26 +70,8 @@ export default function Setting() {
               </div>
             </div>
             <ToggleSwitch
-              value={settings.autoSchedule}
-              onChange={() => toggleSetting('autoSchedule')}
-            />
-          </div>
-        </Card>
-
-        <Card className="p-6 border-l-4 border-l-green-500 border border-border">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-100 dark:bg-green-900 rounded-md">
-                <Bell className="w-6 h-6 text-green-600 dark:text-green-300" />
-              </div>
-              <div>
-                <h3 className="font-bold text-foreground">Notifications</h3>
-                <p className="text-sm text-muted-foreground">Receive task reminders and updates</p>
-              </div>
-            </div>
-            <ToggleSwitch
-              value={settings.notification}
-              onChange={() => toggleSetting('notification')}
+              value={isAutoSchedule}
+              onChange={toggleAutoSchedule}
             />
           </div>
         </Card>

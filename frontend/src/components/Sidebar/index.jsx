@@ -1,12 +1,10 @@
-'use client';
-
 import { Home, Calendar, BarChart3, Settings, Zap } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 
 export default function Sidebar() {
   const location = useLocation();
-
   const navItems = [
+    { id: 'profile', label: "Profile", icon: Home, path: '/profile'},
     { id: 'home', label: 'Home', icon: Home, path: '/' },
     { id: 'schedule', label: 'Schedule', icon: Calendar, path: '/schedule' },
     { id: 'statistics', label: 'Statistics', icon: BarChart3, path: '/statistics' },

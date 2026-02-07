@@ -1,0 +1,27 @@
+@baseUrl = http://localhost:3001
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImR1Y3RyaTA5ODFAZ21haWwuY29tIiwidXNlcl9pZCI6MywiaWF0IjoxNzcwMzc5NDc2LCJleHAiOjE3NzAzODAzNzZ9.s4lKhxggEUjFDw9Dag5fc5JXJcucfGH0hZRqQ8Q05XQ
+
+### GET 
+GET http://locahost:3001/info
+Cookie: accessToken={{token}}
+
+### PATCH
+PATCH http://localhost:8080/api/crud/info
+Content-Type: application/json
+Cookie: accessToken={{token}}
+
+{
+    "name": "Nguyen",
+    "age": 20,
+    "domain": "IT",
+    "role": "AI engineer",
+    "level": "Intern",
+    "habits": "Playing football",
+    "busy_time": "8:00",
+    "working_hours_per_day": 12,
+    "peak_working_hours": "23:00",
+    "more_info": "Love you"
+}
+
+
+

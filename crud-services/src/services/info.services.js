@@ -7,22 +7,20 @@ class InfoServices{
         }
         return InfoServices.instance
     }
-    async getInfo(id){
+    async getInfo(user_id){
         const queryText = `
             SELECT i.*
             FROM user_info i
-            WHERE i.id = $1    
+            WHERE i.user_id = $1
         `
-
-        const { rows } = await db.query(queryText, [id])
+        const { rows } = await db.query(queryText, [user_id])
         if(rows.length == 0){
             throw new Error("Not existed this id")
         }
         return rows[0]
     }
-    async editInfo(req)
+    async updateInfo(user_id, updateData)
     {
-        const { id } = req.params
         const {
             name,
             age,
@@ -34,7 +32,7 @@ class InfoServices{
             working_hours_per_day,
             peak_working_hours,
             more_info
-        } = req.query
+        } = updateData
 
         const queryText = `
             UPDATE user_info
@@ -49,34 +47,19 @@ class InfoServices{
                 working_hours_per_day = COALESCE($8, working_hours_per_day),
                 peak_working_hours = COALESCE($9, peak_working_hours),
                 more_info = COALESCE($10, more_info)
-            WHERE id = $11
+            WHERE user_id = $11
             RETURNING *
         `
 
         const { rows } = await db.query(queryText, [
             name, age, domain, role, level, habits, busy_time, working_hours_per_day,
-            peak_working_hours, more_info, id
+            peak_working_hours, more_info, user_id
         ])
 
         if (rows.length == 0){
             throw new Error("User's information not found")
         }
 
-        return rows[0]
-    }
-    async deleteInfo(id)
-    {
-        const queryText = `
-            DELETE FROM user_info
-            WHERE id = $1
-            RETURNING *
-        `
-
-        const { rows } = await db.query(queryText, [id])
-        
-        if (rows.length == 0){
-            throw new Error("User's information not found")
-        }
         return rows[0]
     }
 }

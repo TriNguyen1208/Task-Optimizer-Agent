@@ -7,22 +7,44 @@ class TaskServices{
         }
         return TaskServices.instance
     }
-    async getTask(req){
-        const {user_id} = req.params
+    async getTask(user_id){
         return await this.getAllTasks(user_id)
-    }   
-    async getAllTasks(user_id){
+    }
+    async getTaskHistory(user_id){
         const queryText = `
-            SELECT * FROM tasks WHERE user_id = $1 ORDER BY id ASC
+            SELECT * 
+            FROM task
+            WHERE user_id = $1 AND finished = TRUE
         `
         const {rows} = await db.query(queryText, [user_id])
         return rows
     }
-    async getTaskByID(id){
+    async getAllTasks(user_id){
         const queryText = `
-            SELECT * FROM tasks WHERE id = $1
+            SELECT * 
+            FROM task 
+            WHERE user_id = $1 AND finished = FALSE
+            ORDER BY id ASC
         `
-        const {rows} = await db.query(queryText, [id])
+        const {rows} = await db.query(queryText, [user_id])
+        return rows
+    }
+    async getTaskName(user_id){
+        const queryText = `
+            SELECT DISTINCT name 
+            FROM task 
+            WHERE user_id = $1 AND finished = FALSE
+        `
+        const {rows} = await db.query(queryText, [user_id])
+        return rows.map(row => row.name);
+    }
+    async getTaskByID(user_id, id){
+        const queryText = `
+            SELECT * 
+            FROM task 
+            WHERE id = $1 and user_id = $2
+        `
+        const {rows} = await db.query(queryText, [id, user_id])
         return rows[0]
     }
     async createTask(
@@ -34,7 +56,7 @@ class TaskServices{
         user_id
     ){
         const queryText = `
-            INSERT INTO tasks (name, description, deadline, working_time, finished, user_id)
+            INSERT INTO task (name, description, deadline, working_time, finished, user_id)
             VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *
         `
@@ -43,7 +65,7 @@ class TaskServices{
             description || "",
             deadline,
             working_time,
-            finished,
+            finished || false,
             user_id
         ])
         return rows[0]
@@ -62,15 +84,14 @@ class TaskServices{
             return res.status(400).json({ message: 'Task id is required' });
         }
         const queryText = `
-            UPDATE tasks
+            UPDATE task
             SET
                 name = COALESCE($1, name),
                 description = COALESCE($2, description),
                 deadline = COALESCE($3, deadline),
                 working_time = COALESCE($4, working_time),
                 finished = COALESCE($5, finished)
-                user_id = COALESCE($6, user_id)
-            WHERE id = $7
+            WHERE user_id = $6 AND id = $7
             RETURNING *
         `
         const {rows} = await db.query(queryText, [
@@ -87,14 +108,14 @@ class TaskServices{
         }
         return rows[0]
     }   
-    async deleteTask(id){
+    async deleteTask(user_id, id){
         const queryText = `
-            DELETE FROM tasks
-            WHERE id = $1
+            DELETE FROM task
+            WHERE id = $1 and user_id = $2
             RETURNING *
         `
 
-        const {rows} = await db.query(queryText, [id])
+        const {rows} = await db.query(queryText, [id, user_id])
         if(rows.length == 0){
             throw new Error("Can't delete task")
         }

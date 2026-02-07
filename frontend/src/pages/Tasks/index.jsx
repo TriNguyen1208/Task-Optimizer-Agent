@@ -1,71 +1,71 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Plus, MessageSquare, Send, CheckCircle } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import TaskDetailModal from '@/components/TaskDetailModal'
+import useTask from '@/hooks/useTask'
+import calculateTimeLeft from '@/utils/calculate_time'
 
-
+//Ý tưởng là đầu tiên fetch data từ database về sau đó render lên, fetch những thằng nào chưa finish thôi
+//Có thể là get 1 task cụ thể, tạo 1 task cụ thể và sửa 1 task cụ thể
+//
 export default function Task() {
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      name: 'Design System',
-      description: 'Create a comprehensive design system with components',
-      workingHours: 8,
-      startDate: '2024-02-01',
-      endDate: '2024-02-15',
-      deadline: '2024-02-15',
-      status: 'In Progress',
-      timeLeft: '3 hours, 2 minutes',
-      path: '/docs/design-system',
-    },
-    {
-      id: 2,
-      name: 'API Integration',
-      description: 'Integrate third-party APIs for data synchronization',
-      workingHours: 6,
-      startDate: '2024-02-10',
-      endDate: '2024-02-20',
-      deadline: '2024-02-20',
-      status: 'Pending',
-      timeLeft: '3 hours, 2 minutes',
-      path: 'https://api.example.com/docs',
-    },
-    {
-      id: 3,
-      name: 'Testing Phase',
-      description: 'Run comprehensive testing suite and fix bugs',
-      workingHours: 5,
-      startDate: '2024-02-15',
-      endDate: '2024-02-25',
-      deadline: '2024-02-25',
-      status: 'Not Started',
-      timeLeft: '3 hours, 2 minutes',
-      path: '/tests/suite.json',
-    },
-  ])
+  const {data: task_data, isLoading: isLoadingGetTasks} = useTask.getTask()
+  const {mutate: updateTask} = useTask.updateTask()
+  const {mutate: addTask} = useTask.addTask()
+  const [tasks, setTasks] = useState([])
 
+  const TimeLeftBadge = ({ deadline }) => {
+    const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(deadline));
+
+    useEffect(() => {
+      const timer = setInterval(() => {
+        setTimeLeft(calculateTimeLeft(deadline));
+      }, 1000); // Cập nhật mỗi giây
+      return () => clearInterval(timer);
+    }, [deadline]);
+
+    return <span>{timeLeft}</span>;
+  };
+
+  useEffect(() => {
+      if(!task_data){
+        return;
+      }
+      setTasks(task_data)
+  }, [isLoadingGetTasks, task_data])
 
   const [selectedTask, setSelectedTask] = useState(null)
-  const [finishedTasks, setFinishedTasks] = useState([])
-  const handleFinishTask = (taskId) => {
+
+  const handleFinishTask = (e, taskId) => {
+    e.preventDefault()
     const task = tasks.find(t => t.id === taskId)
     if (task) {
-      setFinishedTasks([...finishedTasks, task])
-      setTasks(tasks.filter(t => t.id !== taskId))
+      updateTask({
+        ...task,
+        finished: true
+      });
     }
   }
 
-  const handleTaskClick = (task) => {
+  const handleTaskClick = (e, task) => {
     setSelectedTask(task)
   }
 
   const handleSaveTask = (updatedTask) => {
     setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t))
+    updateTask(updatedTask)
   }
 
-
+  const handleCreateTask = () => {
+    setTasks([...tasks, newTask])
+    setShowAddModal(false)
+    addTask(newTask)
+  }
   const [showAddModal, setShowAddModal] = useState(false)
 
+  if(isLoadingGetTasks){
+    return<></>
+  }
   return (
     <div className="p-8 bg-background min-h-screen">
       <div className="mb-8">
@@ -95,32 +95,32 @@ export default function Task() {
                 <tr className="border-b border-border">
                   <th className="text-left py-3 px-4 font-semibold text-foreground text-center">Name</th>
                   <th className="text-left py-3 px-4 font-semibold text-foreground text-center">Deadline</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground text-center">Working time</th>
-                  <th className="text-left py-3 px-4 font-semibold text-foreground text-center">Time left</th>
+                  <th className="py-3 px-4 font-semibold text-foreground text-center">Working time</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground ">Time left</th>
                   <th className="text-center py-3 px-4 font-semibold text-foreground text-center">Finished</th>
                 </tr>
               </thead>
               <tbody>
                 {tasks.map((task) => (
-                  <tr key={task.id} className="border-b border-border hover:bg-secondary transition-colors">
+                  <tr key={task.id || Math.random()} className="border-b border-border hover:bg-secondary transition-colors">
                     <td
-                      onClick={() => handleTaskClick(task)}
-                      className="py-3 px-4 text-foreground cursor-pointer hover:text-primary font-medium text-center max-w-[200px] min-w-[150px]"
+                      onClick={(e) => handleTaskClick(e, task)}
+                      className="py-3 px-4 text-foreground cursor-pointer hover:text-primary font-medium max-w-[300px] min-w-[150px]"
                     >
                       {/* Bọc nội dung vào div và đặt line-clamp ở đây */}
                       <div className="line-clamp-3">
                         {task.name}
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-foreground text-center">{task.deadline}</td>
+                    <td className="py-3 px-4 text-foreground max-w-[120px] min-w-[120px]">{(new Date(task.deadline)).toLocaleString("en-GB")}</td>
                     <td className="py-3 px-4 text-center text-center">
-                      {task.workingHours}
+                      {task.working_time}
                     </td>
-                    <td className="py-3 px-4 text-foreground text-center">{task.timeLeft}</td>
+                    <td className="py-3 px-4 text-foreground"><TimeLeftBadge deadline={(new Date(task.deadline)).toLocaleString()} /></td>
                     <td className="py-3 px-4 text-center text-center">
                       <input
                         type="checkbox"
-                        onChange={() => handleFinishTask(task.id)}
+                        onChange={(e) => handleFinishTask(e, task.id)}
                         className="w-5 h-5 cursor-pointer accent-primary"
                       />
                     </td>
@@ -138,20 +138,20 @@ export default function Task() {
         </Card>
 
       </div>
-
       <TaskDetailModal 
-        task={selectedTask} 
         onClose={() => setSelectedTask(null)} 
         onSave={(updatedTask) => handleSaveTask(updatedTask)} 
+        task={selectedTask} 
       />
       <TaskDetailModal 
-        task={showAddModal ? { id: Date.now(), name: '', description: '', workingHours: 0, startDate: '', endDate: '', deadline: '', status: 'Not Started', path: '' } : null} 
         onClose={() => setShowAddModal(false)} 
         onSave={(newTask) => {
           setTasks([...tasks, newTask])
           setShowAddModal(false)
+          addTask(newTask)
         }}
         isNew
+        task={showAddModal ? { name: '', description: '', working_time: 0, deadline: ''} : null} 
       />
     </div>
   )

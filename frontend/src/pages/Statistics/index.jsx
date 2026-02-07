@@ -1,18 +1,17 @@
 import { Card } from '@/components/ui/card'
 import { TrendingUp, Clock, Zap, CheckCircle } from 'lucide-react'
-
+import useStatistics from '@/hooks/useStatistics'
+import useTask from '@/hooks/useTask'
+//Đầu tiên là lấy dữ liệu từ database history task về
+//Lấy statistic về và render ra. Không cần bỏ vào state gì hết
 export default function Statistics() {
-  const historyData = [
-    { id: 1, task: 'Homepage Design', description: 'Create mockups and wireframes', hours: 4.5, completedDate: '2024-02-10' },
-    { id: 2, task: 'API Development', description: 'Build user authentication', hours: 6.0, completedDate: '2024-02-08' },
-    { id: 3, task: 'Database Setup', description: 'Configure PostgreSQL database', hours: 3.2, completedDate: '2024-02-05' },
-    { id: 4, task: 'UI Components', description: 'Design reusable component library', hours: 5.5, completedDate: '2024-02-03' },
-    { id: 5, task: 'Bug Fixes', description: 'Fix critical production bugs', hours: 2.8, completedDate: '2024-02-01' },
-  ]
+  const {data: historyData, isLoading: isLoadingTaskHistory} = useTask.getTaskHistory()
+  const {data: statistics, isLoading: isLoadingStatistics} = useStatistics.getStatistics()
+  console.log(historyData)
 
-  const totalCompletedHours = historyData.reduce((sum, item) => sum + item.hours, 0)
-  const averageHoursPerTask = (totalCompletedHours / historyData.length).toFixed(1)
-
+  if(isLoadingStatistics || isLoadingTaskHistory || !historyData || !statistics){
+    return <></>
+  }
   return (
     <div className="p-8 bg-background min-h-screen">
       <div className="mb-8">
@@ -21,7 +20,7 @@ export default function Statistics() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card className="p-6 flex items-center gap-4 border border-border">
           <div className="p-3 bg-blue-900">
             <CheckCircle className="w-6 h-6 text-blue-300" />
@@ -38,7 +37,7 @@ export default function Statistics() {
           </div>
           <div className='flex flex-col gap-3'>
             <p className="text-sm text-muted-foreground">Total Hours Worked</p>
-            <p className="text-2xl font-bold text-foreground text-center">{totalCompletedHours.toFixed(1)}h</p>
+            <p className="text-2xl font-bold text-foreground text-center">{statistics.totalHours.toFixed(1)}h</p>
           </div>
         </Card>
 
@@ -48,17 +47,7 @@ export default function Statistics() {
           </div>
           <div className='flex flex-col gap-3'>
             <p className="text-sm text-muted-foreground">Avg Hours/Task</p>
-            <p className="text-2xl font-bold text-foreground text-center">{averageHoursPerTask}h</p>
-          </div>
-        </Card>
-
-        <Card className="p-6 flex items-center gap-4 border border-border">
-          <div className="p-3 bg-orange-900">
-            <Zap className="w-6 h-6 text-orange-300" />
-          </div>
-          <div className='flex flex-col gap-3'>
-            <p className="text-sm text-muted-foreground">Completion Rate</p>
-            <p className="text-2xl font-bold text-foreground text-center">100%</p>
+            <p className="text-2xl font-bold text-foreground text-center">{statistics.avgTotalHours}h</p>
           </div>
         </Card>
       </div>
@@ -80,16 +69,16 @@ export default function Statistics() {
               {historyData.map((item) => (
                 <tr key={item.id} className="border-b border-border hover:bg-secondary transition-colors">
                   <td className="py-3 px-4 text-foreground font-medium min-w-[200px] max-w-[300px]"> 
-                    <div className='line-clamp-1'>{item.task}</div>
+                    <div className='line-clamp-1'>{item.name}</div>
                   </td>
                   <td className="py-3 px-4 text-muted-foreground min-w-[150px] max-w-[400px]">
                     <div className='line-clamp-1'>{item.description}</div>
                   </td>
                   <td className="py-3 px-4 text-foreground min-w-[150px] max-w-[400px]">
-                    <div className='line-clamp-1'>{item.completedDate}</div>
+                    <div className='line-clamp-1'>{(new Date(item.deadline)).toLocaleString("en-GB")}</div>
                   </td>
                   <td className="py-3 px-4 text-right text-foreground font-medium min-w-[150px] max-w-[400px]">
-                    <div className='line-clamp-1'>{item.hours}h</div>
+                    <div className='line-clamp-1'>{item.working_time}h</div>
                   </td>
                 </tr>
               ))}

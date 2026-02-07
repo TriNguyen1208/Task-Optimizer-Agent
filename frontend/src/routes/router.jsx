@@ -9,13 +9,16 @@ import AuthGate from "@/components/AuthGate";
 import ProtectedRoute from "./protected.routes";
 import Profile from "@/pages/Profile";
 import Login from "@/pages/Login";
-import { AuthProvider } from "@/context/auth.context";
 
 export const router = createBrowserRouter([
     {
         path: "/",
         element:
-            <DefaultLayout/>,
+            <AuthGate>
+                 <ProtectedRoute>
+                    <DefaultLayout/>,
+                 </ProtectedRoute>
+             </AuthGate>,
         children: [
             {
                 path: "/",
@@ -35,13 +38,13 @@ export const router = createBrowserRouter([
             },
             {
                 path: "/profile",
-                element: <AuthProvider><Profile/></AuthProvider>
+                element: <Profile/>
             },
         ]
     },
     {
         path: "/login",
-        element: <AuthProvider><Login/></AuthProvider>
+        element: <Login/>
     },
     {
         path: "*",

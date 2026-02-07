@@ -1,9 +1,9 @@
 fastapi
-httpx
+uvicorn
 pydantic
 langchain
-langchain_core
-langchain_google_genai
-dotenv
-google-genai
+langchain-core
+langchain-google-genai
+python-dotenv
 opik
+google-generativeai

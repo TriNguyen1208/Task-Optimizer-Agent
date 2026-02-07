@@ -7,15 +7,13 @@ class ScheduleServices{
         }
         return ScheduleServices.instance
     }
-    async getSchedule(req){
-        const {user_id} = req.params
+    async getSchedule(user_id, req){
         const {
             date,
             from_date,
             to_date,
             task_id,
         } = req.query
-
         if(date){
             return await this.getScheduleByDate(user_id, date)
         }
@@ -26,6 +24,7 @@ class ScheduleServices{
             return await this.getScheduleByTask(user_id, task_id)
         }
         else{
+            console.log("hoho")
             return await this.getAllSchedules(user_id)
         }
     }
@@ -37,17 +36,19 @@ class ScheduleServices{
                 s.date,
                 s.start_time,
                 s.end_time,
-                t.name AS task_name
+                t.name AS task_name,
+                t.description,
+                t.finished
             FROM schedule s
-            JOIN tasks t ON s.task_id = t.id
-            WHERE s.user_id = $1
-            ORDER BY s.id ASC;
+            JOIN task t ON s.task_id = t.id
+            WHERE s.user_id = $1 
+            AND t.finished = FALSE 
         `;
-        
+            
         const { rows } = await db.query(queryText, [user_id]);
-        return rows[0]; 
+        return rows; 
     }
-    async getScheduleByID(id){
+    async getScheduleByID(user_id, id){
         const queryText = `
             SELECT
                 s.id,
@@ -56,10 +57,10 @@ class ScheduleServices{
                 s.end_time,
                 t.name AS task_name
             FROM schedule s
-            JOIN tasks t ON s.task_id = t.id
-            WHERE s.id = $1
+            JOIN task t ON s.task_id = t.id
+            WHERE s.user_id = $1 AND s.id = $2
         `
-        const { rows } = await db.query(queryText, [id])
+        const { rows } = await db.query(queryText, [user_id, id])
         if(rows.length == 0){
             throw new Error("Not existed this id")
         }
@@ -74,11 +75,11 @@ class ScheduleServices{
                 s.end_time,
                 t.name AS task_name
             FROM schedule s
-            JOIN tasks t ON s.task_id = t.id
+            JOIN task t ON s.task_id = t.id
             WHERE s.user_id = $1 AND s.date = $2
         `
         const {rows} = await db.query(queryText, [user_id, date])
-        return rows[0]
+        return rows
     }
     async getScheduleBetweenDays(user_id, from_date, to_date){
         const queryText = `
@@ -89,48 +90,63 @@ class ScheduleServices{
                 s.end_time,
                 t.name AS task_name
             FROM schedule s
-            JOIN tasks t ON s.task_id = t.id
+            JOIN task t ON s.task_id = t.id
             WHERE s.user_id = $1 AND s.date >= $2 AND s.date < $3
         `
         const {rows} = await db.query(queryText, [user_id, from_date, to_date])
-        return rows[0]
+        return rows
     }
     async getScheduleByTask(user_id, task_id){
         const queryText =  `
-            SELECT * FROM schedule WHERE user_id = $1 AND task_id = $2
+            SELECT * 
+            FROM schedule 
+            WHERE user_id = $1 AND task_id = $2
         `
         const {rows} = await db.query(queryText, [user_id, task_id])
-        return rows[0]
+        return rows
     }
-    async createSchedule(
-        date,
-        start_time,
-        end_time,
-        task_id,
-        user_id
-    ){  
+    async createSchedule(date, start_time, end_time, task_name, user_id) {
+        // 1. Lấy ID từ tên task
+        const queryTextGetID = `
+            SELECT id
+            FROM task
+            WHERE name = $1
+            LIMIT 1
+        `;
+        const { rows: taskRows } = await db.query(queryTextGetID, [task_name]);
+
+        // Kiểm tra xem task có tồn tại không trước khi insert
+        if (taskRows.length === 0) {
+            throw new Error(`Task với tên "${task_name}" không tồn tại.`);
+        }
+
+        const taskId = taskRows[0].id;
+
+        // 2. Insert vào bảng schedule
         const queryText = `
             INSERT INTO schedule (date, start_time, end_time, task_id, user_id)
             VALUES ($1, $2, $3, $4, $5)
             RETURNING *
-        `
-        const {rows} = await db.query(queryText, [
+        `;
+        
+        const { rows } = await db.query(queryText, [
             date,
-            start_time, 
-            end_time, 
-            task_id,
+            start_time,
+            end_time,
+            taskId, // Đã sửa từ task_id thành taskId
             user_id
-        ])
+        ]);
 
-        return rows[0]
+        return rows[0];
     }
-    async deleteSchedule(id){
+    async deleteSchedule(user_id, id){
+        console.log(user_id, id)
         const queryText = `
             DELETE FROM schedule
-            WHERE id = $1
+            WHERE id = $1 AND user_id = $2
             RETURNING *
         `
-        const {rows} = await db.query(queryText, [id])
+        const {rows} = await db.query(queryText, [id, user_id])
         
         if(rows.length == 0){
             throw new Error("Schedule not found")
@@ -142,7 +158,6 @@ class ScheduleServices{
         date,
         start_time,
         end_time,
-        task_id,
         user_id,
         id
     ){
@@ -154,17 +169,14 @@ class ScheduleServices{
             SET
                 date = COALESCE($1, date),
                 start_time = COALESCE($2, start_time),
-                end_time = COALESCE($3, end_time),
-                task_id = COALESCE($4, task_id)
-                user_id = COALESCE($5, user_id)
-            WHERE id = $6
+                end_time = COALESCE($3, end_time)
+            WHERE user_id = $4 AND id = $5
             RETURNING *
         `
         const {rows} = await db.query(queryText, [
             date, 
             start_time, 
             end_time, 
-            task_id, 
             user_id,
             id
         ])

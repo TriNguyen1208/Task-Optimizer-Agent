@@ -1,28 +1,33 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/auth.context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import useInfo from '@/hooks/useInfo';
+import { useDispatch } from 'react-redux';
+import { logoutUser } from '@/services/auth.api';
+import { logout } from '@/slices/auth.slice.js' 
+import {toast} from 'react-toastify'
 
 export default function Profile() {
-  const { user, updateProfile, logout } = useAuth();
-  const navigate = useNavigate()
-  
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    age: user?.age || '',
-    jobDomain: user?.job?.domain || '',
-    jobRole: user?.job?.role || '',
-    jobLevel: user?.job?.level || '',
-    habits: user?.about?.habits || '',
-    workingHoursPerDay: user?.about?.workingHoursPerDay || '',
-    peakProductivityHours: user?.about?.peakProductivityHours || '',
-    moreAboutYourself: user?.about?.moreAboutYourself || '',
-  });
+  const { data: info, isLoading: isLoadingInfo} = useInfo.getInfo(); 
+  const { mutate: updateInfo, isPending: isPendingInfo } = useInfo.updateInfo();
 
-  const [saved, setSaved] = useState(false);
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+
+  const [formData, setFormData] = useState({
+    name: '',
+    age: '',
+    domain: '',
+    role: '',
+    level: '',
+    habits: '',
+    working_hours_per_day: '',
+    peak_working_hours: '',
+    more_info: '',
+  });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -30,49 +35,34 @@ export default function Profile() {
       ...prev,
       [name]: value,
     }));
-    setSaved(false);
   };
 
-  const handleSave = () => {
-    if (!user) return;
-
-    updateProfile({
-      name: formData.name,
-      age: Number(formData.age) || 0,
-      job: {
-        domain: formData.jobDomain,
-        role: formData.jobRole,
-        level: formData.jobLevel,
-      },
-      about: {
-        habits: formData.habits,
-        workingHoursPerDay: Number(formData.workingHoursPerDay) || 0,
-        peakProductivityHours: formData.peakProductivityHours,
-        moreAboutYourself: formData.moreAboutYourself,
-      },
-    });
-
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleSave = (e) => {
+    e.preventDefault();
+    updateInfo(formData);
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/auth')
-    // router.push('/auth');
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try{
+      await logoutUser();
+      dispatch(logout())  
+      toast.success("Logout successfully")
+    }catch(error){
+      toast.error("Logout unsuccessfully")
+    }
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="p-8">
-          <p className="text-foreground mb-4">Please log in first</p>
-          <Button onClick={() => navigate('/auth')}>Go to Login</Button>
-        </Card>
-      </div>
-    );
+  useEffect(() => { 
+      if(!info){
+        return;
+      }
+      setFormData(info)
+  }, [isLoadingInfo, info])
+  
+  if(isLoadingInfo || isPendingInfo){
+    return <></>
   }
-
   return (
     <div className="min-h-screen bg-background py-8 px-4">
       <div className="max-w-4xl mx-auto">
@@ -92,13 +82,6 @@ export default function Profile() {
           </Button>
         </div>
 
-        {/* Saved notification */}
-        {saved && (
-          <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-            <p className="text-green-400 text-sm font-medium">Profile updated successfully!</p>
-          </div>
-        )}
-
         {/* Profile Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Sidebar - User Info Card with Live Preview */}
@@ -113,7 +96,7 @@ export default function Profile() {
                 </div>
                 <h2 className="text-xl font-bold text-foreground mb-1">{formData.name || 'Your Name'}</h2>
                 <div className="space-y-1">
-                  <p className="text-muted-foreground text-sm">{user.email}</p>
+                  <p className="text-muted-foreground text-sm">{localStorage.getItem('email')}</p>
                   {formData.age && (
                     <p className="text-muted-foreground text-sm">{formData.age} years old</p>
                   )}
@@ -121,28 +104,28 @@ export default function Profile() {
               </div>
 
               {/* Job Information Preview */}
-              {(formData.jobRole || formData.jobDomain || formData.jobLevel) && (
+              {(formData.role || formData.domain || formData.level) && (
                 <div className="mb-5 pb-5 border-b border-border">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                     Job Information
                   </p>
                   <div className="space-y-3">
-                    {formData.jobDomain && (
+                    {formData.js && (
                       <div>
                         <p className="text-xs text-muted-foreground font-medium">Domain</p>
-                        <p className="text-foreground text-sm mt-0.5">{formData.jobDomain}</p>
+                        <p className="text-foreground text-sm mt-0.5">{formData.domain}</p>
                       </div>
                     )}
-                    {formData.jobRole && (
+                    {formData.role && (
                       <div>
                         <p className="text-xs text-muted-foreground font-medium">Role</p>
-                        <p className="text-foreground text-sm mt-0.5">{formData.jobRole}</p>
+                        <p className="text-foreground text-sm mt-0.5">{formData.role}</p>
                       </div>
                     )}
-                    {formData.jobLevel && (
+                    {formData.level && (
                       <div>
                         <p className="text-xs text-muted-foreground font-medium">Level</p>
-                        <p className="text-foreground text-sm mt-0.5">{formData.jobLevel}</p>
+                        <p className="text-foreground text-sm mt-0.5">{formData.level}</p>
                       </div>
                     )}
                   </div>
@@ -160,22 +143,22 @@ export default function Profile() {
               )}
 
               {/* Working Hours & Peak Productivity Preview */}
-              {(formData.workingHoursPerDay || formData.peakProductivityHours) && (
+              {(formData.working_hours_per_day || formData.peak_working_hours) && (
                 <div className="mb-5 pb-5 border-b border-border">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                     Productivity
                   </p>
                   <div className="space-y-3">
-                    {formData.workingHoursPerDay && (
+                    {formData.working_hours_per_day && (
                       <div>
                         <p className="text-xs text-muted-foreground font-medium">Working Hours per Day</p>
-                        <p className="text-foreground text-sm mt-0.5">{formData.workingHoursPerDay} hours</p>
+                        <p className="text-foreground text-sm mt-0.5">{formData.working_hours_per_day} hours</p>
                       </div>
                     )}
-                    {formData.peakProductivityHours && (
+                    {formData.peak_working_hours && (
                       <div>
                         <p className="text-xs text-muted-foreground font-medium">Peak Productivity Hours</p>
-                        <p className="text-foreground text-sm mt-0.5">{formData.peakProductivityHours}</p>
+                        <p className="text-foreground text-sm mt-0.5">{formData.peak_working_hours}</p>
                       </div>
                     )}
                   </div>
@@ -183,17 +166,17 @@ export default function Profile() {
               )}
 
               {/* More About Yourself Preview */}
-              {formData.moreAboutYourself && (
+              {formData.more_info && (
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                     About You
                   </p>
-                  <p className="text-foreground text-sm leading-relaxed">{formData.moreAboutYourself}</p>
+                  <p className="text-foreground text-sm leading-relaxed">{formData.more_info}</p>
                 </div>
               )}
 
               {/* Empty State */}
-              {!formData.jobRole && !formData.jobDomain && !formData.jobLevel && !formData.habits && !formData.workingHoursPerDay && !formData.peakProductivityHours && !formData.moreAboutYourself && (
+              {!formData.role && !formData.domain && !formData.level && !formData.habits && !formData.working_hours_per_day && !formData.peak_working_hours && !formData.more_info && (
                 <div className="text-center py-6">
                   <p className="text-muted-foreground text-xs">Fill in the form to see your complete profile</p>
                 </div>
@@ -242,41 +225,41 @@ export default function Profile() {
                 <h3 className="text-lg font-bold text-foreground mb-4">Job Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label htmlFor="jobDomain" className="block text-sm font-medium text-foreground mb-2">
+                    <label htmlFor="domain" className="block text-sm font-medium text-foreground mb-2">
                       Domain
                     </label>
                     <Input
-                      id="jobDomain"
-                      name="jobDomain"
+                      id="domain"
+                      name="domain"
                       type="text"
                       placeholder="e.g. Software, Design, Marketing"
-                      value={formData.jobDomain}
+                      value={formData.domain}
                       onChange={handleInputChange}
                     />
                   </div>
                   <div>
-                    <label htmlFor="jobRole" className="block text-sm font-medium text-foreground mb-2">
+                    <label htmlFor="role" className="block text-sm font-medium text-foreground mb-2">
                       Role
                     </label>
                     <Input
-                      id="jobRole"
-                      name="jobRole"
+                      id="role"
+                      name="role"
                       type="text"
                       placeholder="e.g. Developer, Designer, Manager"
-                      value={formData.jobRole}
+                      value={formData.role}
                       onChange={handleInputChange}
                     />
                   </div>
                   <div>
-                    <label htmlFor="jobLevel" className="block text-sm font-medium text-foreground mb-2">
+                    <label htmlFor="level" className="block text-sm font-medium text-foreground mb-2">
                       Level
                     </label>
                     <Input
-                      id="jobLevel"
-                      name="jobLevel"
+                      id="level"
+                      name="level"
                       type="text"
                       placeholder="e.g. Junior, Senior, Lead"
-                      value={formData.jobLevel}
+                      value={formData.level}
                       onChange={handleInputChange}
                     />
                   </div>
@@ -308,11 +291,11 @@ export default function Profile() {
                       </label>
                       <Input
                         id="workingHours"
-                        name="workingHoursPerDay"
+                        name="working_hours_per_day"
                         type="number"
                         step="0.5"
                         placeholder="e.g. 8"
-                        value={formData.workingHoursPerDay}
+                        value={formData.working_hours_per_day}
                         onChange={handleInputChange}
                       />
                     </div>
@@ -322,10 +305,10 @@ export default function Profile() {
                       </label>
                       <Input
                         id="peakHours"
-                        name="peakProductivityHours"
+                        name="peak_working_hours"
                         type="text"
                         placeholder="e.g. 9am - 12pm"
-                        value={formData.peakProductivityHours}
+                        value={formData.peak_working_hours}
                         onChange={handleInputChange}
                       />
                     </div>
@@ -337,9 +320,9 @@ export default function Profile() {
                     </label>
                     <Textarea
                       id="more"
-                      name="moreAboutYourself"
+                      name="more_info"
                       placeholder="Share more about yourself, your goals, interests..."
-                      value={formData.moreAboutYourself}
+                      value={formData.more_info}
                       onChange={handleInputChange}
                       rows={4}
                     />
@@ -351,9 +334,6 @@ export default function Profile() {
               <div className="border-t border-border pt-6 flex gap-4">
                 <Button onClick={handleSave} className="flex-1">
                   Save Changes
-                </Button>
-                <Button variant="outline" onClick={() => navigate('/dashboard')} className="flex-1">
-                  Go to Dashboard
                 </Button>
               </div>
             </form>

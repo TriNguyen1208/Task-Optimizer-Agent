@@ -1,0 +1,21 @@
+@baseUrl = http://localhost:3001
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImR1Y3RyaTA5ODFAZ21haWwuY29tIiwidXNlcl9pZCI6MywiaWF0IjoxNzcwMzY3OTUwLCJleHAiOjE3NzAzNjg4NTB9.4vsbsSQLhqD_1OtE-dUO8Wl9Jj3X6wJiOldH7fk4orY
+
+### GET 
+GET http://localhost:3001/setting/
+Cookie: accessToken={{token}}
+
+### PATCH
+PATCH http://localhost:3001/setting/
+Content-Type: application/json
+Cookie: accessToken={{token}}
+
+{
+    "dark_mode": false,
+    "activate": true,
+    "auto_schedule": true,
+    "notifications": true
+}
+
+
+

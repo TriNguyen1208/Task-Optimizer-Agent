@@ -7,30 +7,25 @@ import { Card } from '@/components/ui/card'
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-export default function TaskDetailModal({ task, onClose, onSave, isNew = false }) {
+export default function TaskDetailModal({ onClose, onSave, isNew = false, task = null }) {
   const [formData, setFormData] = useState(task || {
-    id: 0,
     name: '',
     description: '',
-    workingHours: 0, 
-    startDate: '',
-    endDate: '',
-    path: '',
-    status: 'Not Started',
-    deadline: '',
+    working_time: 0, 
+    deadline: new Date()
   });
-
+  console.log(formData)
   useEffect(() => {
     if (task) {
       setFormData(task);
     }
-  }, [task]); // Đưa vào mảng [task]
+  }, [task]); 
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'workingHours' ? parseFloat(value) : value
+      [name]: name === 'working_time' ? (parseInt(value) || 0) : value
     }))
   }
 
@@ -40,8 +35,11 @@ export default function TaskDetailModal({ task, onClose, onSave, isNew = false }
     }
     onClose()
   }
-  const [startDate, setStartDate] = useState(new Date());
-
+  const [deadline, setDeadline] = useState(task?.deadline ? new Date(task.deadline) : new Date());
+  const handleDeadlineChange = (date) => {
+    setDeadline(date);
+    setFormData(prev => ({ ...prev, deadline: date }));
+  };
   if (!task) return null
 
   return (
@@ -96,10 +94,10 @@ export default function TaskDetailModal({ task, onClose, onSave, isNew = false }
                 Working Hours <span className="text-red-500">*</span>
               </label>
               <input
-                type="time"
-                name="workingHours"
+                type="number"
+                name="working_time"
                 required
-                value={formData.workingHours}
+                value={formData.working_time}
                 onChange={handleChange}
                 className="h-11 text-center w-full px-4 py-2 border border-border bg-background text-foreground rounded-xl focus:ring-2 focus:ring-primary focus:outline-none"
               />
@@ -111,8 +109,8 @@ export default function TaskDetailModal({ task, onClose, onSave, isNew = false }
                 Deadline <span className="text-red-500">*</span>
               </label>
               <DatePicker
-                selected={startDate}
-                onChange={(date) => setStartDate(date)}
+                selected={deadline}
+                onChange={handleDeadlineChange}
                 showTimeSelect
                 timeFormat="HH:mm"
                 timeIntervals={15}

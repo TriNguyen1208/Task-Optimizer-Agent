@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, X, Calendar as CalendarIcon, GripHorizontal } from 'lucide-react'
 import { Card } from '@/components/ui/card'
+import useTask from '@/hooks/useTask';
+import useSchedule from '@/hooks/useSchedule';
 
 const TASK_COLORS = [
   'bg-blue-600 dark:bg-blue-500',
@@ -10,23 +12,36 @@ const TASK_COLORS = [
   'bg-rose-600 dark:bg-rose-500',
 ];
 
-const PREDEFINED_TASKS = [
-  'Design System Update',
-  'Weekly Team Meeting',
-  'Fix API Authentication',
-  'Client Feedback Review',
-  'Database Optimization',
-  'Content Strategy',
-];
-
-
+//Note: Cái để định vị update là taskname
 export default function Schedule() {
+  const {data: task_name_data, isLoading: isLoadingTaskName} = useTask.getTaskName()
+  const {data: schedules_data, isLoading: isLoadingSchedules} = useSchedule.getAllSchedule()
+  const {mutate: updateSchedule} = useSchedule.updateSchedule()
+  const {mutate: addSchedule} = useSchedule.addSchedule()
+  const {mutate: deleteSchedule} = useSchedule.deleteSchedule() 
+
   const [viewType, setViewType] = useState('weekly')
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [tasks, setTasks] = useState([
-    { id: 1, title: 'Design System Update', startTime: '09:00', endTime: '12:00', date: new Date().toISOString().split('T')[0], color: TASK_COLORS[0] },
-    { id: 2, title: 'Weekly Team Meeting', startTime: '14:00', endTime: '15:30', date: new Date().toISOString().split('T')[0], color: TASK_COLORS[2] },
-  ])
+  const [schedules, setSchedules] = useState([])
+
+  const [taskName, setTaskName] = useState([])
+  useEffect(() => {
+    if (!schedules_data) return;
+
+    const schedulesWithColors = schedules_data.map((item, index) => ({
+      ...item,
+      color: TASK_COLORS[index % TASK_COLORS.length]
+    }));
+
+    setSchedules(schedulesWithColors);
+  }, [schedules_data]);
+
+  useEffect(() => {
+    if(!task_name_data){
+        return;
+      }
+      setTaskName(task_name_data)
+  }, [task_name_data, isLoadingTaskName])
 
   const [dragState, setDragState] = useState(null);
 
@@ -34,7 +49,12 @@ export default function Schedule() {
     const [h, m] = time.split(':').map(Number)
     return h * 60 + m
   }
-
+  const formatLocalDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
   const minutesToTime = (totalMinutes) => {
     const mins = Math.max(0, Math.min(24 * 60 - 15, totalMinutes));
     const h = Math.floor(mins / 60);
@@ -59,82 +79,114 @@ export default function Schedule() {
 
   const handleAddTask = (date, hour) => {
     if (dragState) return;
-    const newId = Date.now();
+    const newId = Date.now(); // Dùng timestamp làm ID tạm thời sẽ an toàn hơn
     const newTask = {
-      id: newId, 
-      title: PREDEFINED_TASKS[0], 
-      startTime: hour !== undefined ? `${String(hour).padStart(2, '0')}:00` : "09:00", 
-      endTime: hour !== undefined ? `${String(hour + 1).padStart(2, '0')}:00` : "10:00",
+      task_name: taskName[0] || "New Task", 
+      start_time: hour !== undefined ? `${String(hour).padStart(2, '0')}:00` : "09:00", 
+      end_time: hour !== undefined ? `${String(hour + 1).padStart(2, '0')}:00` : "10:00",
       date: date, 
-      color: TASK_COLORS[newId % TASK_COLORS.length]
     };
-    setTasks([...tasks, newTask]);
+    setSchedules([...schedules, {...newTask, id: newId, color: TASK_COLORS[newId % TASK_COLORS.length]}]);
+    addSchedule(newTask);
   };
-
   // --- LOGIC KÉO THẢ & RESIZE ---
   const onMouseDown = (e, taskId, type) => {
     e.stopPropagation(); 
-    const task = tasks.find(t => t.id === taskId);
+    const task = schedules.find(t => t.id === taskId);
     if (!task) return;
 
     setDragState({
       taskId, type,
       initialMouseY: e.clientY,
       initialMouseX: e.clientX,
-      initialTop: (timeToMinutes(task.startTime) / 60) * 80,
-      initialHeight: ((timeToMinutes(task.endTime) - timeToMinutes(task.startTime)) / 60) * 80,
+      initialTop: (timeToMinutes(task.start_time) / 60) * 80,
+      initialHeight: ((timeToMinutes(task.end_time) - timeToMinutes(task.start_time)) / 60) * 80,
       initialDate: task.date
     });
   };
+  const handleDeleteSchedule = (e, t) => {
+    e.stopPropagation(); 
+    const taskId = t.id;
+    setSchedules(schedules.filter(tk => tk.id !== t.id));
+    deleteSchedule(taskId)
+  }
+  const handleUpdateSchedule = (e, t) => {
+      setSchedules(prev => prev.map(tk => tk.id === t.id ? { ...tk, task_name: e.target.value } : tk))
+      const updatedData = {
+        ...t,                 
+        task_name: e.target.value   
+      };
+      updateSchedule(updatedData)
+  }
+  //Hàm này mới sửa nha
+  const calculateTaskChange = (task, dragState, deltaY, deltaX, hourPixels, viewType) => {
+    let { start_time: newStartTime, end_time: newEndTime, date: newDate } = task;
 
+    if (dragState.type === 'move') {
+      const newTop = dragState.initialTop + deltaY;
+      newStartTime = minutesToTime((newTop / hourPixels) * 60);
+      const duration = timeToMinutes(task.end_time) - timeToMinutes(task.start_time);
+      newEndTime = minutesToTime(timeToMinutes(newStartTime) + duration);
+
+      if (viewType === 'weekly') {
+        const dayDelta = Math.round(deltaX / 150);
+        const d = new Date(dragState.initialDate);
+        d.setDate(d.getDate() + dayDelta);
+        
+        // FIX: Dùng hàm format local thay vì toISOString
+        newDate = d.toISOString().split('T')[0]
+      }
+    } else if (dragState.type === 'resize-bottom') {
+      const newHeight = Math.max(20, dragState.initialHeight + deltaY);
+      newEndTime = minutesToTime(timeToMinutes(task.start_time) + (newHeight / hourPixels) * 60);
+    } else if (dragState.type === 'resize-top') {
+      const newTop = dragState.initialTop + deltaY;
+      const newStartMins = Math.min(timeToMinutes(task.end_time) - 15, (newTop / hourPixels) * 60);
+      newStartTime = minutesToTime(newStartMins);
+    }
+
+    return { start_time: newStartTime, end_time: newEndTime, date: newDate };
+  };
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!dragState) return;
+
       const deltaY = e.clientY - dragState.initialMouseY;
       const deltaX = e.clientX - dragState.initialMouseX;
       const hourPixels = 80;
 
-      setTasks(prev => prev.map(task => {
+      setSchedules(prev => prev.map(task => {
         if (task.id !== dragState.taskId) return task;
-        let newStartTime = task.startTime;
-        let newEndTime = task.endTime;
-        let newDate = task.date;
-
-        if (dragState.type === 'move') {
-          const newTop = dragState.initialTop + deltaY;
-          newStartTime = minutesToTime((newTop / hourPixels) * 60);
-          const duration = timeToMinutes(task.endTime) - timeToMinutes(task.startTime);
-          newEndTime = minutesToTime(timeToMinutes(newStartTime) + duration);
-
-          if (viewType === 'weekly') {
-            const dayDelta = Math.round(deltaX / 150);
-            if (dayDelta !== 0) {
-              const d = new Date(dragState.initialDate);
-              d.setDate(d.getDate() + dayDelta);
-              newDate = d.toISOString().split('T')[0];
-            }
-          }
-        } else if (dragState.type === 'resize-bottom') {
-          const newHeight = Math.max(20, dragState.initialHeight + deltaY);
-          newEndTime = minutesToTime(timeToMinutes(task.startTime) + (newHeight / hourPixels) * 60);
-        } else if (dragState.type === 'resize-top') {
-          const newTop = dragState.initialTop + deltaY;
-          const newStartMins = Math.min(timeToMinutes(task.endTime) - 15, (newTop / hourPixels) * 60);
-          newStartTime = minutesToTime(newStartMins);
-        }
-        return { ...task, startTime: newStartTime, endTime: newEndTime, date: newDate };
+        
+        // Sử dụng hàm tính toán đã tách riêng
+        const updates = calculateTaskChange(task, dragState, deltaY, deltaX, hourPixels, viewType);
+        return { ...task, ...updates };
       }));
     };
-    const handleMouseUp = () => setDragState(null);
+
+    const handleMouseUp = async () => {
+      if (!dragState) return;
+
+      const finalTask = schedules.find(t => t.id === dragState.taskId);
+      console.log(finalTask)
+      if(finalTask){
+        console.log(finalTask)
+        updateSchedule(finalTask)
+      }
+
+      setDragState(null);
+    };
+
     if (dragState) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     }
+
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [dragState, viewType]);
+  }, [dragState, viewType]); 
 
   // --- WEEKLY VIEW ---
   const renderWeeklyView = () => {
@@ -143,19 +195,24 @@ export default function Schedule() {
     const diff = weekStart.getDate() - day + (day === 0 ? -6 : 1);
     weekStart.setDate(diff);
     const weekDays = Array.from({ length: 7 }, (_, i) => { 
-      const d = new Date(weekStart); d.setDate(d.getDate() + i); return d; 
+      const d = new Date(weekStart); 
+      d.setDate(d.getDate() + i); return d; 
     });
     const hours = Array.from({ length: 24 }, (_, i) => i);
 
     return (
       <div className="flex flex-col h-full">
         <div className="flex pl-16 bg-slate-100/50 dark:bg-slate-900/80 border-b border-border sticky top-0 z-30 backdrop-blur-md">
-          {weekDays.map(d => (
-            <div key={d.toISOString()} className="flex-1 p-3 text-center border-r border-border/50 last:border-r-0">
-              <div className="font-bold text-xs text-muted-foreground uppercase tracking-wider">{d.toLocaleDateString('en-US', { weekday: 'short' })}</div>
-              <div className="text-lg font-semibold">{d.getDate()}</div>
-            </div>
-          ))}
+          {weekDays.map(d => {
+            return (
+              <div key={d.toISOString()} className="flex-1 p-3 text-center border-r border-border/50 last:border-r-0">
+                <div className="font-bold text-xs text-muted-foreground uppercase tracking-wider">
+                  {d.toLocaleDateString('en-US', { weekday: 'short' })}
+                </div>
+                <div className="text-lg font-semibold">{d.getDate()}</div>
+              </div>
+            );
+          })}
         </div>
         <div className="flex-1 overflow-y-auto min-h-0">
           <div className="flex min-h-max relative">
@@ -177,14 +234,17 @@ export default function Schedule() {
                         onClick={() => handleAddTask(dateStr, h)}
                       />
                     ))}
-                    {tasks.filter(t => t.date === dateStr).map(t => (
+                    {schedules.filter(t => {
+                        const taskDateOnly = t.date.split('T')[0]; 
+                        return taskDateOnly === dateStr;
+                      }).map(t => (
                       <div 
                         key={t.id} 
                         onMouseDown={(e) => onMouseDown(e, t.id, 'move')}
                         className={`absolute left-1 right-1 rounded-lg shadow-sm border border-white/10 ${t.color} text-white p-2.5 overflow-visible group transition-shadow hover:shadow-md cursor-move`}
                         style={{ 
-                          top: `${(timeToMinutes(t.startTime) / 60) * 80 + 2}px`, 
-                          height: `${((timeToMinutes(t.endTime) - timeToMinutes(t.startTime)) / 60) * 80 - 4}px`, 
+                          top: `${(timeToMinutes(t.start_time) / 60) * 80 + 2}px`, 
+                          height: `${((timeToMinutes(t.end_time) - timeToMinutes(t.start_time)) / 60) * 80 - 4}px`, 
                           zIndex: dragState?.taskId === t.id ? 50 : 10,
                           opacity: dragState?.taskId === t.id ? 0.8 : 1
                         }}
@@ -200,24 +260,23 @@ export default function Schedule() {
                                 <span className="text-[9px] font-bold uppercase tracking-tighter">Task</span>
                             </div>
                             <select 
-                                value={t.title} 
-                                onChange={(e) => setTasks(prev => prev.map(tk => tk.id === t.id ? { ...tk, title: e.target.value } : tk))}
+                                value={t.task_name} 
+                                onChange={(e) => handleUpdateSchedule(e, t)}
                                 onMouseDown={(e) => e.stopPropagation()} 
                                 className="pointer-events-auto bg-transparent font-bold text-xs w-full focus:outline-none cursor-pointer appearance-none uppercase truncate"
                             >
-                                {PREDEFINED_TASKS.map(name => <option key={name} value={name} className="text-slate-900">{name}</option>)}
+                                {taskName.map(name => <option key={name} value={name} className="text-slate-900">{name}</option>)}
                             </select>
-                            <div className="text-[10px] opacity-80 font-medium">{t.startTime} - {t.endTime}</div>
+                            <div className="text-[10px] opacity-80 font-medium">
+                              {t.start_time.slice(0, 5)} - {t.end_time.slice(0, 5)}
+                            </div>
                         </div>
                         
                         <button 
                           onMouseDown={(e) => e.stopPropagation()} 
-                          onClick={(e) => { 
-                            e.stopPropagation(); 
-                            setTasks(tasks.filter(tk => tk.id !== t.id)); 
-                          }}
+                          onClick={(e) => handleDeleteSchedule(e, t)}
                           className="absolute top-1 right-1 h-6 w-6 flex items-center justify-center rounded-full bg-black/20 text-white hover:bg-red-500 hover:text-white hover:scale-110 transition-all opacity-0 group-hover:opacity-100 z-50 cursor-pointer"
-                          title="Delete task"
+                          task_name="Delete task"
                         >
                           <X size={14} strokeWidth={3} />
                         </button>
@@ -238,6 +297,7 @@ export default function Schedule() {
     )
   }
 
+
   const renderMonthlyView = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -255,7 +315,7 @@ export default function Schedule() {
     const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col overflow-y-auto">
         <div className="grid grid-cols-7 bg-slate-100/50 dark:bg-slate-900/80 border-b border-border">
           {dayLabels.map(label => (
             <div key={label} className="p-3 text-center text-xs font-bold text-muted-foreground uppercase tracking-widest border-r border-border/50 last:border-r-0">{label}</div>
@@ -265,7 +325,10 @@ export default function Schedule() {
           {calendarDays.map((date, idx) => {
             const dateStr = date.toISOString().split('T')[0];
             const isCurrentMonth = date.getMonth() === month;
-            const dayTasks = tasks.filter(t => t.date === dateStr);
+            const dayTasks = schedules.filter(t => {
+              const taskDateOnly = t.date.split('T')[0]; 
+              return taskDateOnly === dateStr;
+            });
             return (
               <div key={idx} onClick={() => handleAddTask(dateStr)}
                 className={`relative border-r border-b border-border/30 p-2 transition-all cursor-pointer hover:bg-blue-500/5 ${isCurrentMonth ? 'bg-white dark:bg-slate-950' : 'bg-slate-50/50 dark:bg-black opacity-40'}`}>
@@ -273,10 +336,10 @@ export default function Schedule() {
                 <div className="mt-1 space-y-1">
                   {dayTasks.map(t => (
                     <div key={t.id} className={`group relative text-[10px] pl-1.5 pr-6 py-0.5 rounded shadow-sm text-white truncate font-medium ${t.color}`}>
-                      {t.title}
+                      {t.task_name}
                       <button 
                          onMouseDown={(e) => e.stopPropagation()}
-                         onClick={(e) => { e.stopPropagation(); setTasks(tasks.filter(tk => tk.id !== t.id)); }}
+                         onClick={(e) => handleDeleteSchedule(e, t)}
                          className="absolute right-0 top-0 bottom-0 w-5 flex items-center justify-center bg-black/20 hover:bg-red-500 opacity-0 group-hover:opacity-100 transition-all">
                         <X size={10} strokeWidth={3} />
                       </button>
@@ -291,6 +354,9 @@ export default function Schedule() {
     );
   }
 
+  if(isLoadingSchedules || isLoadingTaskName){
+    return <></>
+  }
   return (
     <div className="p-4 md:p-8 bg-slate-50 dark:bg-[#0a0a0a] h-screen flex flex-col overflow-hidden text-slate-900 dark:text-slate-100">
       <div className="flex items-center justify-between mb-6 flex-shrink-0">

@@ -4,42 +4,72 @@ import compression from 'compression'
 import morgan from 'morgan'
 import 'dotenv/config'
 import setupRoute from '#@/routes/index.js'
-const app = express()
+import errorHandler from '#@/middleware/errorhandler.middleware.js'
+import rateLimit from '#@/middleware/ratelimit.middleware.js'
+import {authenticateToken} from '#@/middleware/auth.middleware.js'
+import cors from 'cors'
+import cookieParser from 'cookie-parser';
 
+const app = express()
 
 //Allow origin
 const allowedOrigins = [
-    // 'https://hoppscotch.io',
-    'http://localhost:3000', //Này là frontend
-    // 'http://localhost:3002',
-    // 'http://127.0.0.1:3001',
-    // 'http://127.0.0.1:3002',
-    // 'http://171.244.139.18:3001',
-    // 'http://171.244.139.18:3002',
-    // // thêm domain khi deploy như:
-    // 'https://thientruc.vn',
-    // 'https://www.thientruc.vn',
-    // 'https://admin.thientruc.vn',
-    // 'https://api.thientruc.vn',
-    // 'http://115.73.3.162:3001',
-    // 'http://115.73.3.162:3002'
+    'http://localhost:3000', //This is frontend calling
 ];
 //init middleware
-app.use(express())
+
+// =====================
+// Parse request
+// =====================
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+
+// =====================
+// Security & optimization
+// =====================
 app.use(helmet())
 app.use(compression())
-app.use(morgan())
+app.use(cookieParser())
 
+// =====================
+// Logging
+// =====================
+app.use(morgan('dev'))
+// =====================
+// CORS
+// =====================
 app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-        return callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true,
-}));
+  origin: (origin, callback) => {
+    // Allow server-to-server / curl / same-origin
+    if (!origin) {
+      return callback(null, true)
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true)
+    }
+
+    return callback(null, false)
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}))
+
+// RẤT QUAN TRỌNG
+app.options(/.*/, cors())
+
+// =====================
+// API Gateway middlewares
+// =====================
+// app.use(rateLimit) 
+app.use(authenticateToken)      
+
+
 //init routes
 setupRoute(app)
+
+//Error handler
+app.use(errorHandler)
 
 export default app

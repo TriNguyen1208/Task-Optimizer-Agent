@@ -1,5 +1,7 @@
 import {StatusCodes} from 'http-status-codes'
 import services from '#@/services/task.services.js'
+import 'dotenv/config'
+import getUserId from '#@/utils/get_userid.js'
 
 class TaskController{
     static getInstance(){
@@ -9,19 +11,45 @@ class TaskController{
         return TaskController.instance
     }
     async getTask(req, res){
-        const tasks = await services.getTask(req)
-        return res.status(StatusCodes.OK).json({
-            "messages": "Get all tasks successfully",
-            tasks
-        })
+        const user_id = getUserId(req)
+        if (!user_id || isNaN(user_id)) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+            message: 'Invalid id'
+        })}
+        
+        const tasks = await services.getTask(user_id)
+        return res.status(StatusCodes.OK).json(tasks)
+    }
+    async getTaskHistory(req, res){
+        const user_id = getUserId(req)
+        if(!user_id || isNaN(user_id)){
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                message: "Invalid id"
+            })
+        }
+        const tasks = await services.getTaskHistory(user_id)
+        return res.status(StatusCodes.OK).json(tasks)
     }
     async getTaskByID(req, res){
         const {id} = req.params
-        const task = await services.getTaskByID(id)
-        return res.status(StatusCodes.OK).json({
-            "messages": "Get task by id",
-            task
-        })
+        const user_id = getUserId(req)
+        if (!user_id || isNaN(user_id)) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+            message: 'Invalid id'
+        })}
+
+        const task = await services.getTaskByID(user_id, id)
+        return res.status(StatusCodes.OK).json(task)
+    }
+    async getTaskName(req, res){
+        const user_id = getUserId(req)
+        if (!user_id || isNaN(user_id)) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+            message: 'Invalid id'
+        })}
+
+        const task = await services.getTaskName(user_id)
+        return res.status(StatusCodes.OK).json(task)
     }
     async createTask(req, res){
         const {
@@ -30,8 +58,14 @@ class TaskController{
             deadline,
             working_time,
             finished,
-            user_id
         } = req.body
+
+        const user_id = getUserId(req)
+        if (!user_id || isNaN(user_id)) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+            message: 'Invalid id'
+        })}
+
         const task = await services.createTask(
             name,
             description,
@@ -52,8 +86,13 @@ class TaskController{
             deadline,
             working_time,
             finished,
-            user_id
         } = req.body
+        const user_id = getUserId(req)
+        if (!user_id || isNaN(user_id)) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+            message: 'Invalid id'
+        })}
+
         const {id} = req.params
         const task = await services.updateTask(
             id,
@@ -70,8 +109,13 @@ class TaskController{
         })
     }
     async deleteTask(req, res){
+        const user_id = getUserId(req)
+        if (!user_id || isNaN(user_id)) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+            message: 'Invalid id'
+        })}
         const {id} = req.params
-        const task = await services.deleteTask(id)
+        const task = await services.deleteTask(user_id, id)
         return res.status(StatusCodes.OK).json({
             "messages": "Delete task successfully",
             task

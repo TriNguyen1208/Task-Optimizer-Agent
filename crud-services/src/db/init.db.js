@@ -13,16 +13,26 @@ class Database{
             // Định nghĩa schema các bảng
             this.TABLE_SCHEMAS = [
                 {
-                    tableName: 'tasks',
+                    tableName: 'users',
                     query: `
-                        CREATE TABLE tasks (
+                        CREATE TABLE users (
+                            id SERIAL PRIMARY KEY,
+                            email VARCHAR(255) NOT NULL UNIQUE,
+                            password TEXT NOT NULL
+                        );
+                    `
+                },
+                {
+                    tableName: 'task',
+                    query: `
+                        CREATE TABLE task (
                             id SERIAL PRIMARY KEY,
                             name VARCHAR(255) NOT NULL,
                             description TEXT,
                             deadline TIMESTAMPTZ,
                             working_time INTEGER,
                             finished BOOLEAN DEFAULT FALSE,
-                            user_id int
+                            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
                         );
                     `
                 },
@@ -34,8 +44,20 @@ class Database{
                             date DATE NOT NULL,
                             start_time TIME NOT NULL,
                             end_time TIME NOT NULL,
-                            task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
-                            user_id INTEGER
+                            task_id INTEGER REFERENCES task(id) ON DELETE CASCADE,
+                            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
+                        );
+                    `
+                },
+                {
+                    tableName: 'setting',
+                    query: `
+                        CREATE TABLE setting (
+                            user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                            dark_mode BOOLEAN DEFAULT TRUE,
+                            activate BOOLEAN DEFAULT TRUE,
+                            auto_schedule BOOLEAN DEFAULT TRUE,
+                            notifications BOOLEAN DEFAULT TRUE
                         );
                     `
                 },
@@ -43,17 +65,17 @@ class Database{
                     tableName: 'user_info',
                     query: `
                         CREATE TABLE user_info (
-                            id SERIAL PRIMARY KEY,
-                            name VARCHAR(255),
-                            age INTEGER,
-                            domain VARCHAR(255),
-                            role VARCHAR(255),
-                            level VARCHAR(255),
-                            habits TEXT,
-                            busy_time TEXT,
-                            working_hours_per_day INTEGER,
-                            peak_working_hours TEXT,
-                            more_info TEXT
+                            user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                            name VARCHAR(255) DEFAULT '',
+                            age INTEGER DEFAULT 0,
+                            domain VARCHAR(255) DEFAULT '',
+                            role VARCHAR(255) DEFAULT '',
+                            level VARCHAR(255) DEFAULT '',
+                            habits TEXT DEFAULT '',
+                            busy_time TEXT DEFAULT '',
+                            working_hours_per_day INTEGER DEFAULT 0,
+                            peak_working_hours TEXT DEFAULT '',
+                            more_info TEXT DEFAULT ''
                         );
                     `
                 }
