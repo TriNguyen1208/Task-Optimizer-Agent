@@ -18,6 +18,24 @@ async def get_tasks(cookies):
             else: unfinished_tasks.append(t)
         return unfinished_tasks, finished_tasks
 
+async def get_task_by_id(cookies, id):
+    async with httpx.AsyncClient(cookies=cookies) as client:
+        resp = await client.get(
+            f"{OTHER_SERVICE_URL}/task/{id}",
+            timeout=5.0
+        )
+        resp.raise_for_status()
+        return resp.json()
+    
+async def get_schedule(cookies):
+    async with httpx.AsyncClient(cookies=cookies) as client:
+        resp = await client.get(
+            f"{OTHER_SERVICE_URL}/schedule",
+            timeout=5.0
+        )
+        resp.raise_for_status()
+        return resp.json()
+
 async def get_user_info(cookies):
     async with httpx.AsyncClient(cookies=cookies) as client:
         resp = await client.get(

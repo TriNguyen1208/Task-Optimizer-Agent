@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 # Import từ file của bạn
-from ai_services import organize_schedule, predict_working_time
+from ai_services import organize_schedule, predict_working_time, orgranize_schedule_1_task
 
 # Load environment variables
 load_dotenv()
@@ -63,6 +63,16 @@ async def schedule(request: Request):
     try:
         cookies = request.cookies
         result = await organize_schedule(cookies=cookies)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.get("/schedule/{task_id}")
+async def schedule(task_id: int, request: Request):
+    try:
+        cookies = request.cookies
+        result = await orgranize_schedule_1_task(cookies=cookies, task_id=task_id)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
