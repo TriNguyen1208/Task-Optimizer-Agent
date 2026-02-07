@@ -170,7 +170,7 @@ async def predict_working_time(name: str, description: str, cookies: dict):
     }
     
     messages = [
-        {"role": "system", "content": "You predict real working hours of task (float number)."},
+        {"role": "system", "content": "You predict real working hours of task (an integer)."},
         {"role": "user", "content": f"Input Data: {json.dumps(input_data, ensure_ascii=False)}"}
     ]
 
