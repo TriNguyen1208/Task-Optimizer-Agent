@@ -8,11 +8,7 @@ import { useMode } from '@/context/setting.context'
 
 export default function TaskDetailModal({ onClose, onSave, isNew = false, task = null }) {
   const { isAutoSchedule } = useMode()
-  
-  // Gọi trực tiếp API ở đây, không cần truyền từ props
-  // Nếu hook useAI của bạn không trả về isPending, bạn có thể bỏ dòng ": isPredicting" đi
   const { mutate: predictWorkingTime, isPending: isPredicting } = useAI.postWorkingTime()
-
   const [formData, setFormData] = useState(task || {
     name: '',
     description: '',
@@ -20,7 +16,6 @@ export default function TaskDetailModal({ onClose, onSave, isNew = false, task =
     deadline: new Date()
   });
 
-  // State lưu giá trị gợi ý từ AI
   const [aiSuggestion, setAiSuggestion] = useState(null);
 
   useEffect(() => {
@@ -39,7 +34,7 @@ export default function TaskDetailModal({ onClose, onSave, isNew = false, task =
 
   const handleSave = () => {
     if (!formData.name.trim()) {
-        alert("Task name is required!"); // Đã sửa từ toast thành alert
+        alert("Task name is required!"); 
         return;
     }
     if (onSave) {
@@ -60,7 +55,6 @@ export default function TaskDetailModal({ onClose, onSave, isNew = false, task =
     setFormData(prev => ({ ...prev, deadline: date }));
   };
 
-  // --- LOGIC AI PREDICT ---
   const handlePredict = () => {
     if (!formData.name) {
       alert("Please enter a task name first!"); 
@@ -74,8 +68,6 @@ export default function TaskDetailModal({ onClose, onSave, isNew = false, task =
 
     predictWorkingTime(payload, {
       onSuccess: (data) => {
-        // Tùy vào API của bạn trả về { time: 2 } hay chỉ số 2
-        // Bạn hãy console.log(data) để kiểm tra nếu không hiện số
         const predictedValue = data?.time || data; 
         
         if (predictedValue) {
@@ -90,7 +82,6 @@ export default function TaskDetailModal({ onClose, onSave, isNew = false, task =
   };
 
   const handleKeyDownWorkingTime = (e) => {
-    // Nếu user bấm Tab hoặc Enter khi đang có gợi ý
     if (aiSuggestion && (!formData.working_time || formData.working_time === 0) && (e.key === 'Tab' || e.key === 'Enter')) {
         e.preventDefault();
         setFormData(prev => ({ ...prev, working_time: aiSuggestion }));
@@ -151,14 +142,14 @@ export default function TaskDetailModal({ onClose, onSave, isNew = false, task =
           </div>
 
           <div className="grid grid-cols-2 gap-4 items-end"> 
-            {/* Cột Working Hours */}
+            {}
             <div className="flex flex-col relative">
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-medium text-foreground">
                     Working Hours <span className="text-red-500">*</span>
                 </label>
                 
-                {/* NÚT AI PREDICT */}
+                {}
                 <button 
                     type="button"
                     onClick={handlePredict}
@@ -183,7 +174,7 @@ export default function TaskDetailModal({ onClose, onSave, isNew = false, task =
                         ${aiSuggestion && !formData.working_time ? 'border-purple-400 placeholder:text-purple-400/70' : 'border-border'}
                     `}
                 />
-                 {/* Tooltip gợi ý */}
+                 {}
                  {aiSuggestion && !formData.working_time && (
                     <div className="absolute -bottom-5 left-0 w-full text-center text-[10px] text-purple-500 font-medium animate-pulse">
                         AI suggests: {aiSuggestion}h
@@ -192,7 +183,7 @@ export default function TaskDetailModal({ onClose, onSave, isNew = false, task =
               </div>
             </div>
 
-            {/* Cột Deadline */}
+            {}
             <div className="flex flex-col">
               <label className="block text-sm font-medium text-foreground mb-2">
                 Deadline <span className="text-red-500">*</span>
