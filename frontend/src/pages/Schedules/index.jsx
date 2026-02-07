@@ -15,11 +15,11 @@ const TASK_COLORS = [
 ];
 
 export default function Schedule() {
-  const {data: task_name_data, isLoading: isLoadingTaskName} = useTask.getTaskName()
-  const {data: schedules_data, isLoading: isLoadingSchedules} = useSchedule.getAllSchedule()
-  const {mutate: updateSchedule} = useSchedule.updateSchedule()
-  const {mutate: addSchedule} = useSchedule.addSchedule()
-  const {mutate: deleteSchedule} = useSchedule.deleteSchedule() 
+  const { data: task_name_data, isLoading: isLoadingTaskName } = useTask.getTaskName()
+  const { data: schedules_data, isLoading: isLoadingSchedules } = useSchedule.getAllSchedule()
+  const { mutate: updateSchedule } = useSchedule.updateSchedule()
+  const { mutate: addSchedule } = useSchedule.addSchedule()
+  const { mutate: deleteSchedule } = useSchedule.deleteSchedule()
 
   const [viewType, setViewType] = useState('weekly')
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -27,7 +27,8 @@ export default function Schedule() {
   const [taskName, setTaskName] = useState([])
   const [dragState, setDragState] = useState(null);
 
-  // Hash màu theo tên task để cố định màu
+  const isMutatingRef = useRef(false);
+
   const getTaskColor = (name) => {
     let hash = 0;
     const str = String(name || "Default");
@@ -39,18 +40,22 @@ export default function Schedule() {
 
   useEffect(() => {
     if (!schedules_data) return;
+
+    // Chặn đồng bộ nếu đang kéo thả HOẶC đang chờ mutation hoàn tất
+    if (dragState || isMutatingRef.current) return;
+
     const schedulesWithColors = schedules_data.map((item) => ({
       ...item,
       color: getTaskColor(item.task_name)
     }));
+
     setSchedules(schedulesWithColors);
-  }, [schedules_data]);
+  }, [schedules_data, dragState]);
 
   useEffect(() => {
-    if(!task_name_data) return;
-      setTaskName(task_name_data)
+    if (!task_name_data) return;
+    setTaskName(task_name_data)
   }, [task_name_data, isLoadingTaskName])
-
 
   const timeToMinutes = (time) => {
     if (!time) return 0;
@@ -58,10 +63,9 @@ export default function Schedule() {
     return h * 60 + m
   }
 
-  // Format ngày theo Local Time để tránh lệch múi giờ
   const formatLocalDate = (dateInput) => {
     const date = new Date(dateInput);
-    if (isNaN(date.getTime())) return ""; 
+    if (isNaN(date.getTime())) return "";
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -80,7 +84,6 @@ export default function Schedule() {
     return 'bg-slate-50 dark:bg-slate-900/30'
   }
 
-  // Check va chạm
   const isColliding = (targetTask, allTasks) => {
     const targetDate = formatLocalDate(targetTask.date);
     const targetStart = timeToMinutes(targetTask.start_time);
@@ -89,7 +92,7 @@ export default function Schedule() {
     return allTasks.some(other => {
       if (other.id === targetTask.id) return false;
       if (formatLocalDate(other.date) !== targetDate) return false;
-      
+
       const otherStart = timeToMinutes(other.start_time);
       const otherEnd = timeToMinutes(other.end_time);
 
@@ -111,24 +114,32 @@ export default function Schedule() {
     if (dragState) return;
     const newId = Date.now();
     const name = taskName[0] || "New Task";
-    
+
     const newTask = {
       id: newId,
-      task_name: name, 
-      start_time: hour !== undefined ? `${String(hour).padStart(2, '0')}:00` : "09:00", 
+      task_name: name,
+      start_time: hour !== undefined ? `${String(hour).padStart(2, '0')}:00` : "09:00",
       end_time: hour !== undefined ? `${String(hour + 1).padStart(2, '0')}:00` : "10:00",
-      date: dateStr, 
+      date: dateStr,
       color: getTaskColor(name)
     };
 
-    if (isColliding(newTask, schedules)) return; 
+    if (isColliding(newTask, schedules)) return;
 
     setSchedules([...schedules, newTask]);
-    addSchedule(newTask);
+
+    isMutatingRef.current = true;
+    const { color, ...apiPayload } = newTask;
+    
+    addSchedule(apiPayload, {
+        onSettled: () => {
+            setTimeout(() => { isMutatingRef.current = false; }, 1000);
+        }
+    });
   };
 
   const onMouseDown = (e, taskId, type) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     const task = schedules.find(t => t.id === taskId);
     if (!task) return;
 
@@ -138,33 +149,44 @@ export default function Schedule() {
       initialMouseX: e.clientX,
       initialTop: (timeToMinutes(task.start_time) / 60) * 80,
       initialHeight: ((timeToMinutes(task.end_time) - timeToMinutes(task.start_time)) / 60) * 80,
-      initialDate: formatLocalDate(task.date), 
-      originalTask: { ...task } 
+      initialDate: formatLocalDate(task.date),
+      originalTask: { ...task }
     });
   };
 
   const handleDeleteSchedule = (e, t) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     setSchedules(schedules.filter(tk => tk.id !== t.id));
-    deleteSchedule(t.id);
+    
+    isMutatingRef.current = true;
+    deleteSchedule(t.id, {
+        onSettled: () => {
+            setTimeout(() => { isMutatingRef.current = false; }, 1000);
+        }
+    });
   }
 
-  // --- FIX LỖI 1 NGÀY Ở ĐÂY ---
   const handleUpdateSchedule = (e, t) => {
-      const newName = e.target.value;
-      // QUAN TRỌNG: Format lại date trước khi update để đảm bảo nó là chuỗi YYYY-MM-DD chuẩn
-      // Nếu không format, nó có thể lấy ISO string cũ và bị lệch múi giờ khi lưu lại
-      const cleanDate = formatLocalDate(t.date);
+    const newName = e.target.value;
+    const cleanDate = formatLocalDate(t.date);
 
-      const updatedTask = { 
-        ...t, 
-        task_name: newName, 
-        color: getTaskColor(newName),
-        date: cleanDate 
-      };
-      
-      setSchedules(prev => prev.map(tk => tk.id === t.id ? updatedTask : tk))
-      updateSchedule(updatedTask)
+    const uiTask = {
+      ...t,
+      task_name: newName,
+      date: cleanDate,
+      color: getTaskColor(newName)
+    };
+
+    setSchedules(prev => prev.map(tk => tk.id === t.id ? uiTask : tk));
+
+    isMutatingRef.current = true;
+    const { color, ...apiPayload } = uiTask;
+    
+    updateSchedule(apiPayload, {
+        onSettled: () => {
+            setTimeout(() => { isMutatingRef.current = false; }, 1000);
+        }
+    });
   }
 
   const calculateTaskChange = (task, dragState, deltaY, deltaX, hourPixels, viewType) => {
@@ -173,17 +195,17 @@ export default function Schedule() {
     if (dragState.type === 'move') {
       const newTop = dragState.initialTop + deltaY;
       newStartTime = minutesToTime((newTop / hourPixels) * 60);
-      
+
       const duration = timeToMinutes(dragState.originalTask.end_time) - timeToMinutes(dragState.originalTask.start_time);
       newEndTime = minutesToTime(timeToMinutes(newStartTime) + duration);
 
       if (viewType === 'weekly') {
-        const colWidth = (window.innerWidth - 64) / 7; 
+        const colWidth = (window.innerWidth - 64) / 7;
         const dayDelta = Math.round(deltaX / colWidth);
 
         const d = new Date(dragState.initialDate);
         d.setDate(d.getDate() + dayDelta);
-        newDate = formatLocalDate(d); 
+        newDate = formatLocalDate(d);
       }
     } else if (dragState.type === 'resize-bottom') {
       const newHeight = Math.max(20, dragState.initialHeight + deltaY);
@@ -214,14 +236,22 @@ export default function Schedule() {
     const handleMouseUp = () => {
       if (!dragState) return;
       const finalTask = schedules.find(t => t.id === dragState.taskId);
-      
+
       if (finalTask) {
         if (isColliding(finalTask, schedules)) {
-            setSchedules(prev => prev.map(t => 
-                t.id === dragState.taskId ? dragState.originalTask : t
-            ));
+          setSchedules(prev => prev.map(t =>
+            t.id === dragState.taskId ? dragState.originalTask : t
+          ));
         } else {
-            updateSchedule({ ...finalTask, date: formatLocalDate(finalTask.date) });
+          const cleanDate = formatLocalDate(finalTask.date);
+          const { color, ...apiPayload } = { ...finalTask, date: cleanDate };
+          
+          isMutatingRef.current = true;
+          updateSchedule(apiPayload, {
+             onSettled: () => {
+                 setTimeout(() => { isMutatingRef.current = false; }, 1000);
+             }
+          });
         }
       }
       setDragState(null);
@@ -238,13 +268,13 @@ export default function Schedule() {
   }, [dragState, viewType, schedules]); 
 
   const renderWeeklyView = () => {
-    const weekStart = new Date(currentDate); 
-    const day = weekStart.getDay(); 
+    const weekStart = new Date(currentDate);
+    const day = weekStart.getDay();
     const diff = weekStart.getDate() - day + (day === 0 ? -6 : 1);
     weekStart.setDate(diff);
-    const weekDays = Array.from({ length: 7 }, (_, i) => { 
-      const d = new Date(weekStart); 
-      d.setDate(d.getDate() + i); return d; 
+    const weekDays = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(weekStart);
+      d.setDate(d.getDate() + i); return d;
     });
     const hours = Array.from({ length: 24 }, (_, i) => i);
 
@@ -277,48 +307,48 @@ export default function Schedule() {
                 return (
                   <div key={dateStr} className={`flex-1 relative min-w-[100px] ${dayIdx < 6 ? 'border-r border-border/30' : ''}`}>
                     {hours.map(h => (
-                      <div key={h} 
+                      <div key={h}
                         className={`h-20 border-b border-border/30 w-full transition-all cursor-crosshair hover:bg-blue-500/5 dark:hover:bg-blue-400/10 hover:ring-1 hover:ring-inset hover:ring-blue-400/40 ${getHourClass(h)}`}
                         onClick={() => handleAddTask(dateStr, h)}
                       />
                     ))}
                     {schedules.filter(t => formatLocalDate(t.date) === dateStr).map(t => (
-                      <div 
-                        key={t.id} 
+                      <div
+                        key={t.id}
                         onMouseDown={(e) => onMouseDown(e, t.id, 'move')}
                         className={`absolute left-1 right-1 rounded-lg shadow-sm border border-white/10 ${t.color} text-white p-2.5 overflow-visible group transition-shadow hover:shadow-md cursor-move`}
-                        style={{ 
-                          top: `${(timeToMinutes(t.start_time) / 60) * 80 + 2}px`, 
-                          height: `${((timeToMinutes(t.end_time) - timeToMinutes(t.start_time)) / 60) * 80 - 4}px`, 
+                        style={{
+                          top: `${(timeToMinutes(t.start_time) / 60) * 80 + 2}px`,
+                          height: `${((timeToMinutes(t.end_time) - timeToMinutes(t.start_time)) / 60) * 80 - 4}px`,
                           zIndex: dragState?.taskId === t.id ? 50 : 10,
                           opacity: dragState?.taskId === t.id ? 0.8 : 1
                         }}
                       >
-                        <div 
-                            className="absolute -top-1 left-0 right-0 h-4 cursor-ns-resize z-40 hover:bg-white/10 rounded-t-lg transition-colors" 
-                            onMouseDown={(e) => onMouseDown(e, t.id, 'resize-top')} 
+                        <div
+                          className="absolute -top-1 left-0 right-0 h-4 cursor-ns-resize z-40 hover:bg-white/10 rounded-t-lg transition-colors"
+                          onMouseDown={(e) => onMouseDown(e, t.id, 'resize-top')}
                         />
 
-                        <div className="relative z-30 mr-8 pointer-events-none"> 
-                            <div className="flex items-center gap-1 mb-0.5 opacity-70">
-                                <GripHorizontal size={10} />
-                                <span className="text-[9px] font-bold uppercase tracking-tighter">Task</span>
-                            </div>
-                            <select 
-                                value={t.task_name} 
-                                onChange={(e) => handleUpdateSchedule(e, t)}
-                                onMouseDown={(e) => e.stopPropagation()} 
-                                className="pointer-events-auto bg-transparent font-bold text-xs w-full focus:outline-none cursor-pointer appearance-none uppercase truncate"
-                            >
-                                {taskName.map(name => <option key={name} value={name} className="text-slate-900">{name}</option>)}
-                            </select>
-                            <div className="text-[10px] opacity-80 font-medium">
-                              {t.start_time.slice(0, 5)} - {t.end_time.slice(0, 5)}
-                            </div>
+                        <div className="relative z-30 mr-8 pointer-events-none">
+                          <div className="flex items-center gap-1 mb-0.5 opacity-70">
+                            <GripHorizontal size={10} />
+                            <span className="text-[9px] font-bold uppercase tracking-tighter">Task</span>
+                          </div>
+                          <select
+                            value={t.task_name}
+                            onChange={(e) => handleUpdateSchedule(e, t)}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            className="pointer-events-auto bg-transparent font-bold text-xs w-full focus:outline-none cursor-pointer appearance-none uppercase truncate"
+                          >
+                            {taskName.map(name => <option key={name} value={name} className="text-slate-900">{name}</option>)}
+                          </select>
+                          <div className="text-[10px] opacity-80 font-medium">
+                            {t.start_time.slice(0, 5)} - {t.end_time.slice(0, 5)}
+                          </div>
                         </div>
-                        
-                        <button 
-                          onMouseDown={(e) => e.stopPropagation()} 
+
+                        <button
+                          onMouseDown={(e) => e.stopPropagation()}
                           onClick={(e) => handleDeleteSchedule(e, t)}
                           className="absolute top-1 right-1 h-6 w-6 flex items-center justify-center rounded-full bg-black/20 text-white hover:bg-red-500 hover:text-white hover:scale-110 transition-all opacity-0 group-hover:opacity-100 z-50 cursor-pointer"
                           title="Delete task"
@@ -326,9 +356,9 @@ export default function Schedule() {
                           <X size={14} strokeWidth={3} />
                         </button>
 
-                        <div 
-                            className="absolute -bottom-1 left-0 right-0 h-4 cursor-ns-resize z-40 hover:bg-white/10 rounded-b-lg transition-colors" 
-                            onMouseDown={(e) => onMouseDown(e, t.id, 'resize-bottom')} 
+                        <div
+                          className="absolute -bottom-1 left-0 right-0 h-4 cursor-ns-resize z-40 hover:bg-white/10 rounded-b-lg transition-colors"
+                          onMouseDown={(e) => onMouseDown(e, t.id, 'resize-bottom')}
                         />
                       </div>
                     ))}
@@ -378,10 +408,10 @@ export default function Schedule() {
                   {dayTasks.map(t => (
                     <div key={t.id} className={`group relative text-[10px] pl-1.5 pr-6 py-0.5 rounded shadow-sm text-white truncate font-medium ${t.color}`}>
                       {t.task_name}
-                      <button 
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onClick={(e) => handleDeleteSchedule(e, t)}
-                          className="absolute right-0 top-0 bottom-0 w-5 flex items-center justify-center bg-black/20 hover:bg-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                      <button
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => handleDeleteSchedule(e, t)}
+                        className="absolute right-0 top-0 bottom-0 w-5 flex items-center justify-center bg-black/20 hover:bg-red-500 opacity-0 group-hover:opacity-100 transition-all">
                         <X size={10} strokeWidth={3} />
                       </button>
                     </div>
@@ -395,23 +425,23 @@ export default function Schedule() {
     );
   }
 
-  if(isLoadingSchedules || isLoadingTaskName) return null;
+  if (isLoadingSchedules || isLoadingTaskName) return null;
 
   return (
     <div className="p-4 md:p-8 bg-slate-50 dark:bg-[#0a0a0a] h-screen flex flex-col overflow-hidden text-slate-900 dark:text-slate-100">
       <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <h1 className="text-3xl font-bold tracking-tight">Schedule</h1>
         <div className="flex items-center gap-3">
-           <div className="bg-slate-200/50 dark:bg-slate-800/50 p-1 rounded-lg flex gap-1">
-             <button onClick={() => setViewType('weekly')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${viewType === 'weekly' ? 'bg-white dark:bg-slate-700 shadow-sm text-black dark:text-white' : 'text-slate-500 hover:text-slate-700'}`}>WEEKLY</button>
-             <button onClick={() => setViewType('monthly')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${viewType === 'monthly' ? 'bg-white dark:bg-slate-700 shadow-sm text-black dark:text-white' : 'text-slate-500 hover:text-slate-700'}`}>MONTHLY</button>
-           </div>
-           <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-border/50 rounded-lg px-3 py-1.5 shadow-sm">
-             <button onClick={() => navigate('prev')} className="hover:text-primary"><ChevronLeft size={16}/></button>
-             <span className="font-semibold text-xs min-w-[100px] text-center uppercase tracking-wider">{currentDate.toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
-             <button onClick={() => navigate('next')} className="hover:text-primary"><ChevronRight size={16}/></button>
-           </div>
-           <button onClick={() => setCurrentDate(new Date())} className="p-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-black rounded-lg hover:opacity-80 transition-all"><CalendarIcon size={18} /></button>
+          <div className="bg-slate-200/50 dark:bg-slate-800/50 p-1 rounded-lg flex gap-1">
+            <button onClick={() => setViewType('weekly')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${viewType === 'weekly' ? 'bg-white dark:bg-slate-700 shadow-sm text-black dark:text-white' : 'text-slate-500 hover:text-slate-700'}`}>WEEKLY</button>
+            <button onClick={() => setViewType('monthly')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${viewType === 'monthly' ? 'bg-white dark:bg-slate-700 shadow-sm text-black dark:text-white' : 'text-slate-500 hover:text-slate-700'}`}>MONTHLY</button>
+          </div>
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-border/50 rounded-lg px-3 py-1.5 shadow-sm">
+            <button onClick={() => navigate('prev')} className="hover:text-primary"><ChevronLeft size={16} /></button>
+            <span className="font-semibold text-xs min-w-[100px] text-center uppercase tracking-wider">{currentDate.toLocaleString('default', { month: 'short', year: 'numeric' })}</span>
+            <button onClick={() => navigate('next')} className="hover:text-primary"><ChevronRight size={16} /></button>
+          </div>
+          <button onClick={() => setCurrentDate(new Date())} className="p-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-black rounded-lg hover:opacity-80 transition-all"><CalendarIcon size={18} /></button>
         </div>
       </div>
       <Card className="flex-1 overflow-hidden border border-border/50 shadow-2xl flex flex-col rounded-2xl bg-white dark:bg-slate-950">
