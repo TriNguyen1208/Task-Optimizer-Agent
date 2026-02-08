@@ -146,7 +146,7 @@ export default function TaskDetailModal({ onClose, onSave, isNew = false, task =
             <div className="flex flex-col relative">
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-medium text-foreground">
-                    Working Hours <span className="text-red-500">*</span>
+                    Working Time <span className="text-red-500">*</span>
                 </label>
                 
                 {}

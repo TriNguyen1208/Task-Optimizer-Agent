@@ -7,15 +7,13 @@ dotenv.config({ path: '../.env' });
 
 export default defineConfig({
   server: {
-    // allowedHosts: ['admin.thientruc.vn'],
+    port: 3000,
     proxy: {
-      '/api/admin': {
-        target: process.env.VITE_API_URL || 'http://localhost:8080', // API backend server
+      '/api': {
+        target: process.env.VITE_API_GATEWAY || 'http://localhost:8080',
         changeOrigin: true,
       }
-    },
-    host: '0.0.0.0', // expose ra bên ngoài container
-    port: 3000      // hoặc port bạn muốn
+    }
   },
   plugins: [
     react(),

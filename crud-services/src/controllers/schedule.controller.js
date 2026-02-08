@@ -38,7 +38,6 @@ class ScheduleController{
         } = req.body;
         
         const user_id = getUserId(req)
-        console.log(user_id)
         if (!user_id || isNaN(user_id)) {
             return res.status(StatusCodes.BAD_REQUEST).json({
             message: 'Invalid id'

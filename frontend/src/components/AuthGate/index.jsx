@@ -8,7 +8,6 @@ export default function AuthGate({ children }) {
     const navigate = useNavigate();
     useEffect(() => {
         const user = localStorage.getItem('user');
-        console.log(user)
         if (!user) {
             dispatch(logout());
             navigate('/login', { replace: true });

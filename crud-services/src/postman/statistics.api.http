@@ -1,5 +1,0 @@
-### Get statistics
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImR1Y3RyaTA5ODFAZ21haWwuY29tIiwidXNlcl9pZCI6MywiaWF0IjoxNzcwMzc0MjM2LCJleHAiOjE3NzAzNzUxMzZ9.n-elGM3Zu8dZa6j86eBzmnyUFKV7E-KLTKctNGXCffY
-
-GET http://localhost:3001/statistics/
-Cookie: accessToken={{token}}

@@ -8,6 +8,7 @@ import { useDispatch } from 'react-redux';
 import { loginUser, signupUser } from '@/services/auth.api';
 import { toast } from 'react-toastify';
 import { useEffect } from 'react';
+import icon from '@/assets/icon.png'
 
 export default function Login() {
     const dispatch = useDispatch();
@@ -81,10 +82,14 @@ export default function Login() {
           <div className="p-8">
             {/* Logo */}
             <div className="flex items-center justify-center mb-8">
-              <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">TF</span>
+              <div className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center">
+                <img
+                  src={icon}
+                  alt="Task optimizer logo"
+                  className="w-full h-full object-contain"
+                />
               </div>
-              <span className="ml-3 text-2xl font-bold text-foreground">TaskFlow</span>
+              <span className="ml-3 text-2xl font-bold text-foreground">Task Optimizer</span>
             </div>
 
             <h2 className="text-2xl font-bold text-center mb-2 text-foreground">

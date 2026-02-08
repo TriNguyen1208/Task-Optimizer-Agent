@@ -53,7 +53,6 @@ export default function Schedule() {
     
   }, [schedules_data]);
 
-  console.log(schedules)
   useEffect(() => {
     if (!schedules_data) return;
 
@@ -196,7 +195,6 @@ export default function Schedule() {
 
     isMutatingRef.current = true;
     const { color, ...apiPayload } = uiTask;
-    console.log(apiPayload)
     updateSchedule(apiPayload, {
         onSettled: () => {
             setTimeout(() => { isMutatingRef.current = false; }, 1000);

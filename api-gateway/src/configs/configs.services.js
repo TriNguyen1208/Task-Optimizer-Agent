@@ -1,3 +1,5 @@
+import 'dotenv/config'
+
 const services_dev = {
     ai: {
         url: process.env.AI_SERVICES_DEV || 'http://localhost:3002'
@@ -16,7 +18,10 @@ const services_pro = {
     }
 }
 
-const services = {dev: services_dev, pro: services_pro}
-const env = process.env.NODE_ENV || 'dev'
+const services = {
+    development: services_dev, 
+    production: services_pro
+}
+const env = process.env.NODE_ENV || 'development'
 
 export default services[env]

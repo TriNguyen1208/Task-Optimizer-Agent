@@ -28,6 +28,7 @@ function useAddTask(){
             toast.success(success.message);
             queryClient.invalidateQueries({queryKey: ["task"]});
             queryClient.invalidateQueries({queryKey: ["task-name"]});
+            queryClient.invalidateQueries({queryKey: ["schedules"]});
         },
         onError: (error) => {
             const message = error?.response?.data?.message || "Error adding new task";
@@ -44,6 +45,7 @@ function useUpdateTask(){
             queryClient.invalidateQueries({queryKey: ["task"]});
             queryClient.invalidateQueries({queryKey: ["task-name"]});
             queryClient.invalidateQueries({queryKey: ["task-history"]});
+            queryClient.invalidateQueries({queryKey: ["schedules"]});
         },
         onError: (error) => {
             const message = error?.response?.data?.message || "Error adding new task";

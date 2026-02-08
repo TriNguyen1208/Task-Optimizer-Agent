@@ -47,14 +47,12 @@ class AuthServices{
             message: 'Sai thông tin đăng nhập'
         }
         const id = await this.getUserIdByEmail(email)
-        // Tạo access token
         const accessToken = jwt.sign(
             { email: email, user_id: id},
             ACCESS_SECRET,
             { expiresIn: '15m' }
         );
 
-        // Tạo refresh token
         const refreshToken = jwt.sign(
             { email: email, user_id: id},
             REFRESH_SECRET,
@@ -108,14 +106,12 @@ class AuthServices{
         await this.initSetting(id)
         await this.initInfo(id)
         
-        // Tạo access token
         const accessToken = jwt.sign(
             { email: email, user_id: id },
             ACCESS_SECRET,
             { expiresIn: '15m' }
         );
 
-        // Tạo refresh token
         const refreshToken = jwt.sign(
             { email: email, user_id: id },
             REFRESH_SECRET,
@@ -274,7 +270,6 @@ class AuthServices{
             }
         }
 
-        // 1. Giải mã token
         let decoded;
         try {
             decoded = jwt.verify(token, process.env.RESET_SECRET);
@@ -286,7 +281,6 @@ class AuthServices{
         }
         const { email } = decoded;
 
-        // 2. Kiểm tra user có tồn tại
         const result = await db.query(
             `SELECT email FROM users WHERE email = $1`,
         [email]
@@ -299,10 +293,8 @@ class AuthServices{
             }
         }
 
-        // 3. Băm mật khẩu mới
         const hashedPassword = await hashPassword(newPassword)
 
-        // 4. Cập nhật mật khẩu
         await db.query(
             `UPDATE users SET password = $1 WHERE email = $2`,
             [hashedPassword, email]

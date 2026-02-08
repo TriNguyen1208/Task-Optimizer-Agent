@@ -1,11 +1,16 @@
 import httpx
 from fastapi import Request
-OTHER_SERVICE_URL = "http://localhost:3001"
+import os
 
+if os.getenv("NODE_ENV") == 'production':
+    CURD_SERVICE_URL = os.getenv("CRUD_SERVICE_PRO")
+else:
+    CURD_SERVICE_URL = os.getenv("CRUD_SERVICE_DEV")
+    
 async def get_tasks(cookies):
     async with httpx.AsyncClient(cookies=cookies) as client:
         resp = await client.get(
-            f"{OTHER_SERVICE_URL}/task/tasks",
+            f"{CURD_SERVICE_URL}/task/tasks",
             timeout=5.0
         )
         resp.raise_for_status()
@@ -21,7 +26,7 @@ async def get_tasks(cookies):
 async def get_task_by_id(cookies, id):
     async with httpx.AsyncClient(cookies=cookies) as client:
         resp = await client.get(
-            f"{OTHER_SERVICE_URL}/task/{id}",
+            f"{CURD_SERVICE_URL}/task/{id}",
             timeout=5.0
         )
         resp.raise_for_status()
@@ -30,7 +35,7 @@ async def get_task_by_id(cookies, id):
 async def get_schedule(cookies):
     async with httpx.AsyncClient(cookies=cookies) as client:
         resp = await client.get(
-            f"{OTHER_SERVICE_URL}/schedule",
+            f"{CURD_SERVICE_URL}/schedule",
             timeout=5.0
         )
         resp.raise_for_status()
@@ -39,7 +44,7 @@ async def get_schedule(cookies):
 async def get_user_info(cookies):
     async with httpx.AsyncClient(cookies=cookies) as client:
         resp = await client.get(
-            f"{OTHER_SERVICE_URL}/info",
+            f"{CURD_SERVICE_URL}/info",
             timeout=5.0
         )
         resp.raise_for_status()

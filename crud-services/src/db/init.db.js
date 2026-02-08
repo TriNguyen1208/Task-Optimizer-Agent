@@ -94,10 +94,7 @@ class Database{
 
     async init(){
         try {
-
-            // const currentDb = await this.query("SELECT current_database();");
-            // console.log("Code đang thực tế kết nối tới database:", currentDb.rows[0].current_database);
-            console.log("Đang kiểm tra cơ sở dữ liệu...");
+            console.log("Checking the database...");
 
             for (const schema of this.TABLE_SCHEMAS) {
                 const checkQuery = `
@@ -117,9 +114,9 @@ class Database{
                 }
             }
 
-            console.log("Cơ sở dữ liệu sẵn sàng!");
+            console.log("Database is ready");
         } catch (error) {
-            console.error("Lỗi khi tạo bảng:", error);
+            console.error("Error during creating table", error);
             process.exit(1);
         }
     }
