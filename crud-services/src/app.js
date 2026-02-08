@@ -53,7 +53,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }))
 
-// RẤT QUAN TRỌNG
 app.options(/.*/, cors())
 
 //init routes

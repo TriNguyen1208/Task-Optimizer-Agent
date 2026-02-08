@@ -2,8 +2,11 @@ import httpx
 from fastapi import Request
 import os
 
-CURD_SERVICE_URL = os.getenv("CRUD_SERVICE_PRO")
-
+if os.getenv("NODE_ENV") == 'production':
+    CURD_SERVICE_URL = os.getenv("CRUD_SERVICE_PRO")
+else:
+    CURD_SERVICE_URL = os.getenv("CRUD_SERVICE_DEV")
+    
 async def get_tasks(cookies):
     async with httpx.AsyncClient(cookies=cookies) as client:
         resp = await client.get(

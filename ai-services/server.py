@@ -7,13 +7,11 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
-# Import từ file của bạn
 from ai_services import organize_schedule, predict_working_time, orgranize_schedule_1_task
 
 ACCESS_SECRET = os.getenv("ACCESS_SECRET")
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        # 2. Lấy accessToken từ Cookie
         token = request.cookies.get("accessToken")
 
         if not token:
@@ -23,11 +21,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
             )
 
         try:
-            # 3. Decode và Verify token
-            # PyJWT sẽ tự check thời hạn (exp) nếu trong token có trường đó
             payload = jwt.decode(token, ACCESS_SECRET, algorithms=["HS256"])
             
-            # Lưu thông tin user vào request để dùng ở các Route bên dưới
             request.state.user = payload
             
         except jwt.ExpiredSignatureError:
@@ -41,10 +36,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
 app = FastAPI()
 
-# Kích hoạt Middleware
 app.add_middleware(AuthMiddleware)
 
-# 1. Định nghĩa cấu trúc dữ liệu gửi lên
 class WorkingTimeRequest(BaseModel):
     name: str
     description: str
