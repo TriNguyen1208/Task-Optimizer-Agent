@@ -1,6 +1,8 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import jwt
 import os
-from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -8,8 +10,6 @@ from pydantic import BaseModel
 # Import từ file của bạn
 from ai_services import organize_schedule, predict_working_time, orgranize_schedule_1_task
 
-# Load environment variables
-load_dotenv()
 ACCESS_SECRET = os.getenv("ACCESS_SECRET")
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):

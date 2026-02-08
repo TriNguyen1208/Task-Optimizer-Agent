@@ -10,12 +10,10 @@ import opik
 from langchain.tools import tool
 from langchain.agents import create_agent
 
-# Import từ file service của bạn
 from data_services import get_tasks, get_user_info, get_task_by_id, get_schedule
 
 load_dotenv()
 
-# --- Định nghĩa Schema ---
 class SingleTask(BaseModel):
     """Information of a schedule unit, including a task and the time to do the task"""
     date: date_type = Field(description="The date to do the task, with the format: DD/MM/YYYY")
@@ -40,11 +38,10 @@ class SingleTask(BaseModel):
 class ScheduleOutput(BaseModel):
     tasks: List[SingleTask]
 
-# --- Cấu hình Model ---
 rate_limiter = InMemoryRateLimiter(requests_per_second=0.15)
 
 gemini_model = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash-lite", # Nên dùng bản ổn định
+    model="gemini-2.5-flash", 
     temperature=0,
     rate_limiter=rate_limiter
 )
@@ -107,14 +104,13 @@ async def organize_schedule(cookies: dict):
         }
     ]
 
-    # Kết quả trả về trực tiếp là object ScheduleOutput
     result = await schedule_agent.ainvoke({"messages": messages})
   
     final_output = result.get("structured_response") or result.get("output")
     
     if isinstance(final_output, ScheduleOutput):
         return final_output.model_dump()["tasks"]
-    return final_output # Nếu là dict
+    return final_output 
 
 @opik.track(name="schedule_1_task")
 async def orgranize_schedule_1_task(cookies: dict, task_id: int):
@@ -148,7 +144,6 @@ async def orgranize_schedule_1_task(cookies: dict, task_id: int):
         }
     ]
 
-    # Kết quả trả về trực tiếp là object ScheduleOutput
     result: ScheduleOutput = await schedule_agent.ainvoke({"messages": messages})
   
     final_output = result.get("structured_response") or result.get("output")

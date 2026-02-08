@@ -6,6 +6,7 @@ import helmet from 'helmet'
 import cors from 'cors'
 import {errorHandler} from '#@/middleware/error.middleware.js'
 import cookieParser from 'cookie-parser'
+import 'dotenv/config'
 
 //init middleware
 const app = express()
@@ -28,8 +29,10 @@ app.use(morgan('dev'))
 // CORS
 // =====================
 const allowedOrigins = [
-    'http://localhost:8080', //This is api-gateway calling
-    'http://localhost:3002' //This is ai-services calling
+    process.env.API_GATEWAY_DEV,
+    process.env.AI_SERVICES_DEV,
+    process.env.API_GATEWAY_PRO,
+    process.env.AI_SERVICES_PRO,
 ];
 
 app.use(cors({

@@ -1,10 +1,11 @@
-import { Home, Calendar, BarChart3, Settings, Zap } from 'lucide-react'
+import { Home, Calendar, BarChart3, Settings, Zap, UserPen } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
+import icon from '@/assets/icon.png'
 
 export default function Sidebar() {
   const location = useLocation();
   const navItems = [
-    { id: 'profile', label: "Profile", icon: Home, path: '/profile'},
+    { id: 'profile', label: "Profile", icon: UserPen, path: '/profile'},
     { id: 'home', label: 'Home', icon: Home, path: '/' },
     { id: 'schedule', label: 'Schedule', icon: Calendar, path: '/schedule' },
     { id: 'statistics', label: 'Statistics', icon: BarChart3, path: '/statistics' },
@@ -12,12 +13,16 @@ export default function Sidebar() {
   ]
 
   return (
-    <aside className="w-48 bg-card border-r border-border flex flex-col">
-      <div className="p-6 border-b border-border flex items-center gap-2">
+    <aside className="w-60 bg-card border-r border-border flex flex-col">
+      <div className="p-6 border-b border-border flex items-center gap-4">
         <div className="w-8 h-8 bg-primary flex items-center justify-center rounded">
-          <Zap className="w-5 h-5 text-primary-foreground" />
+          <img
+            src={icon}
+            alt="Task Optimizer logo"
+            className="w-full h-full object-contain"
+          />
         </div>
-        <span className="font-bold text-lg text-foreground">TaskFlow</span>
+        <span className="font-bold text-lg text-foreground">Task Optimizer</span>
       </div>
 
       <nav className="flex-1 p-4 space-y-2">

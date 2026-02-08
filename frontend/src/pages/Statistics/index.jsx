@@ -7,7 +7,6 @@ import useTask from '@/hooks/useTask'
 export default function Statistics() {
   const {data: historyData, isLoading: isLoadingTaskHistory} = useTask.getTaskHistory()
   const {data: statistics, isLoading: isLoadingStatistics} = useStatistics.getStatistics()
-  console.log(historyData)
 
   if(isLoadingStatistics || isLoadingTaskHistory || !historyData || !statistics){
     return <></>

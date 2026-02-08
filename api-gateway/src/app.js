@@ -8,13 +8,11 @@ import rateLimit from '#@/middleware/ratelimit.middleware.js'
 import {authenticateToken} from '#@/middleware/auth.middleware.js'
 import cors from 'cors'
 import cookieParser from 'cookie-parser';
+import 'dotenv/config'
 
 const app = express()
 
-//Allow origin
-const allowedOrigins = [
-    'http://localhost:3000', //This is frontend calling
-];
+
 //init middleware
 
 // =====================
@@ -34,12 +32,19 @@ app.use(cookieParser())
 // Logging
 // =====================
 app.use(morgan('dev'))
+
 // =====================
 // CORS
 // =====================
+
+//Allow origin
+const allowedOrigins = [
+    process.env.FRONTEND_DEV,
+    process.env.FRONTEND_PRO
+];
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow server-to-server / curl / same-origin
     if (!origin) {
       return callback(null, true)
     }
@@ -55,13 +60,12 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }))
 
-// RẤT QUAN TRỌNG
 app.options(/.*/, cors())
 
 // =====================
 // API Gateway middlewares
 // =====================
-// app.use(rateLimit) 
+app.use(rateLimit) 
 app.use(authenticateToken)      
 
 

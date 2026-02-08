@@ -6,7 +6,6 @@ import nodeMailer from 'nodemailer';
 
 let transporter;
 
-// ========== Gmail cá nhân  ==========
 if (process.env.MAIL_SERVICE === 'gmail') {
   transporter = nodeMailer.createTransport({
     service: 'gmail',
@@ -17,7 +16,6 @@ if (process.env.MAIL_SERVICE === 'gmail') {
   });
 }
 
-// SMTP Server công ty (bữa sau hỏi chú) ==========
 else {
   transporter = nodeMailer.createTransport({
     host: process.env.MAIL_HOST,

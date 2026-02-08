@@ -27,7 +27,6 @@ class TaskServices{
         return rows
     }
     async getTaskHistory(user_id){
-        console.log(user_id)
         const queryText = `
             SELECT * 
             FROM task

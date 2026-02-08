@@ -24,7 +24,6 @@ class ScheduleServices{
             return await this.getScheduleByTask(user_id, task_id)
         }
         else{
-            console.log("hoho")
             return await this.getAllSchedules(user_id)
         }
     }
@@ -105,46 +104,12 @@ class ScheduleServices{
         const {rows} = await db.query(queryText, [user_id, task_id])
         return rows
     }
-    // async createSchedule(date, start_time, end_time, task_name, user_id) {
-    //     // 1. Lấy ID từ tên task
-    //     const queryTextGetID = `
-    //         SELECT id
-    //         FROM task
-    //         WHERE name = $1
-    //         LIMIT 1
-    //     `;
-    //     const { rows: taskRows } = await db.query(queryTextGetID, [task_name]);
-
-    //     // Kiểm tra xem task có tồn tại không trước khi insert
-    //     if (taskRows.length === 0) {
-    //         throw new Error(`Task với tên "${task_name}" không tồn tại.`);
-    //     }
-
-    //     const taskId = taskRows[0].id;
-
-    //     // 2. Insert vào bảng schedule
-    //     const queryText = `
-    //         INSERT INTO schedule (date, start_time, end_time, task_id, user_id)
-    //         VALUES ($1, $2, $3, $4, $5)
-    //         RETURNING *
-    //     `;
-        
-    //     const { rows } = await db.query(queryText, [
-    //         date,
-    //         start_time,
-    //         end_time,
-    //         taskId, // Đã sửa từ task_id thành taskId
-    //         user_id
-    //     ]);
-
-    //     return rows[0];
-    // }
+    
     async createSchedule(
         date, start_time, end_time, task_id, task_name, user_id 
     ) {
         let finalTaskId = task_id;
 
-        // 1. Nếu không có task_id nhưng có task_name, đi tìm ID từ tên
         if (!finalTaskId && task_name) {
             const queryTextGetID = `
                 SELECT id
@@ -160,12 +125,10 @@ class ScheduleServices{
             finalTaskId = taskRows[0].id;
         }
 
-        // Kiểm tra cuối cùng xem có ID để insert chưa
         if (!finalTaskId) {
             throw new Error("Cần cung cấp ít nhất task_id hoặc task_name.");
         }
 
-        // 2. Insert vào bảng schedule
         const queryText = `
             INSERT INTO schedule (date, start_time, end_time, task_id, user_id)
             VALUES ($1, $2, $3, $4, $5)
@@ -183,7 +146,6 @@ class ScheduleServices{
         return rows[0];
     }
     async deleteSchedule(user_id, id){
-        console.log(user_id, id)
         const queryText = `
             DELETE FROM schedule
             WHERE id = $1 AND user_id = $2
@@ -198,7 +160,7 @@ class ScheduleServices{
     }
 
     async updateSchedule(
-        schedule_id, // Bắt buộc phải có để biết sửa cái nào
+        schedule_id, 
         date, 
         start_time, 
         end_time, 
@@ -210,7 +172,6 @@ class ScheduleServices{
 
         let finalTaskId = task_id;
 
-        // 1. Nếu không có task_id thì mới đi tìm theo task_name
         if (!finalTaskId && task_name) {
             const queryTextGetID = `
                 SELECT id FROM task
@@ -224,7 +185,6 @@ class ScheduleServices{
             }
         }
 
-        // 2. Cập nhật vào bảng schedule
         const queryText = `
             UPDATE schedule
             SET
@@ -237,7 +197,7 @@ class ScheduleServices{
         `;
         
         const { rows } = await db.query(queryText, [
-            date || null,      // Đảm bảo truyền null nếu là "" hoặc undefined
+            date || null,     
             start_time || null,
             end_time || null,
             finalTaskId || null,

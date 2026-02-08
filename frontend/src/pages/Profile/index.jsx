@@ -10,7 +10,7 @@ import { logoutUser } from '@/services/auth.api';
 import { logout } from '@/slices/auth.slice.js' 
 import {toast} from 'react-toastify'
 import {useQueryClient} from '@tanstack/react-query'
-
+import icon from '@/assets/icon.png'
 export default function Profile() {
   const { data: info, isLoading: isLoadingInfo} = useInfo.getInfo(); 
   const { mutate: updateInfo, isPending: isPendingInfo } = useInfo.updateInfo();
@@ -76,10 +76,14 @@ export default function Profile() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-xl">TF</span>
+              <img
+                src={icon}
+                alt="Task optimizer logo"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">TaskFlow</h1>
+              <h1 className="text-3xl font-bold text-foreground">Task Optimizer</h1>
               <p className="text-muted-foreground">Personal Profile</p>
             </div>
           </div>
@@ -293,7 +297,7 @@ export default function Profile() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="workingHours" className="block text-sm font-medium text-foreground mb-2">
-                        Working Hours per Day
+                        Working Time per Day
                       </label>
                       <Input
                         id="workingHours"

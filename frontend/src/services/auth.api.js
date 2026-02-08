@@ -5,7 +5,6 @@ import { setCredentials, logout, setLoading } from '@/slices/auth.slice';
 //Login user
 export const loginUser = (email, password) => async (dispatch) => {
     try {
-        console.log(API_ROUTES.auth.login)
         const res = await axios.post(API_ROUTES.auth.login, {
             email,
             password,
@@ -25,7 +24,6 @@ export const loginUser = (email, password) => async (dispatch) => {
 //Signup user
 export const signupUser = (email, password) => async (dispatch) => {
     try{
-        console.log(email, password)
         const res = await axios.post(API_ROUTES.auth.signup, {
             email, 
             password

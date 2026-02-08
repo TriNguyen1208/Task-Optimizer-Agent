@@ -1,3 +1,5 @@
+import 'dotenv/config'
+
 const services_dev = {
     ai: {
         url: process.env.AI_SERVICES_DEV || 'http://localhost:3002'

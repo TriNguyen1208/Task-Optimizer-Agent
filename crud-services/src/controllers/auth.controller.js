@@ -13,11 +13,10 @@ class AuthController{
             const { status, message, token = null, user = null } = await authServices.login(req.body);
             if (token) {
                 const { accessToken, refreshToken } = token;
-                // Gửi token qua HttpOnly cookie
                 res.cookie('accessToken', accessToken, {
                     httpOnly: true,
-                    secure: process.env.NODE_ENV === 'production', // chỉ gửi qua HTTPS (tắt nếu đang dev)
-                    sameSite: 'Strict',      // bảo vệ CSRF
+                    secure: process.env.NODE_ENV === 'production', 
+                    sameSite: 'Strict',      
                     path: '/',
                     maxAge: 15 * 60 * 1000
                 });
@@ -42,11 +41,10 @@ class AuthController{
             const { status, message, token = null, user = null } = await authServices.signup(req.body);
             if (token) {
                 const { accessToken, refreshToken } = token;
-                // Gửi token qua HttpOnly cookie
                 res.cookie('accessToken', accessToken, {
                     httpOnly: true,
-                    secure: process.env.NODE_ENV === 'production', // chỉ gửi qua HTTPS (tắt nếu đang dev)
-                    sameSite: 'Strict',      // bảo vệ CSRF
+                    secure: process.env.NODE_ENV === 'production', 
+                    sameSite: 'Strict',      
                     path: '/',
                     maxAge: 15 * 60 * 1000
                 });
@@ -68,7 +66,6 @@ class AuthController{
     }
     async logout(req, res){
         try {
-            // Xóa cookies ở phía client bằng cách gửi lại với maxAge = 0
             res.clearCookie('accessToken', {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
@@ -94,10 +91,10 @@ class AuthController{
             const { status, message, accessToken } = await authServices.refreshToken(_refreshToken);
             res.cookie('accessToken', accessToken, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production', // chỉ gửi qua HTTPS (tắt nếu đang dev)
-                sameSite: 'Strict',      // bảo vệ CSRF
+                secure: process.env.NODE_ENV === 'production', 
+                sameSite: 'Strict',      
                 path: '/',
-                maxAge: 15 * 60 * 1000   // 15 phút
+                maxAge: 15 * 60 * 1000  
             });
             res.status(status).json({ message: message, accessToken });
         } catch (error) {
