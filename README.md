@@ -1,4 +1,4 @@
-# Project Name
+# Task Optimizer
 
 > A web application designed to provide analytics and predictions of working time of this tasks. Additionally, it analyzes and identifies the most suitable schedule for different types of tasks. The ultimate goal is to empower users to manage and allocate their time optimally for peak productivity.
 
