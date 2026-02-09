@@ -1,17 +1,43 @@
 version: "3.8"
 
 services:
-  db:
-    image: postgres:16
-    container_name: postgres_db
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin123
-      POSTGRES_DB: task_optimizer
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
     ports:
-      - "5678:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+      - "3000:3000"
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - api-gateway
+      
+  api-gateway:
+    build:
+      context: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./api-gateway/.env
+    depends_on:
+      - crud-services
+      - ai-services
 
-volumes:
-  pgdata:
+  crud-services:
+    build:
+      context: ./crud-services
+    container_name: crud-services
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./crud-services/.env
+
+  ai-services:
+    build:
+      context: ./ai-services
+    container_name: ai-services
+    ports:
+      - "3002:3002"
+    env_file:
+      - ./ai-services/.env
