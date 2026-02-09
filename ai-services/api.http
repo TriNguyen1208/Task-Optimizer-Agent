@@ -1,0 +1,14 @@
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImR1Y3RyaTA5ODFAZ21haWwuY29tIiwidXNlcl9pZCI6MSwiaWF0IjoxNzcwNjE0NDU1LCJleHAiOjE3NzA2MTUzNTV9.6ug-qghV9tDkVMI9st4AARrZpTTK3E97Yskxg7vgxDk
+POST http://localhost:3002/working-time
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}
+
+{
+    "name": "Viết báo cáo tháng",
+    "description": "Tổng hợp dữ liệu từ các phòng ban và dự thảo báo cáo quý 1 cho giám đốc."
+}
+
+###2. Get schedule
+GET http://localhost:3002/schedule/59
+Content-Type: application/json
+Cookie: accessToken={{accessToken}}

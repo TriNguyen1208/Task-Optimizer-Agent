@@ -7,16 +7,15 @@ from pydantic import BaseModel, Field, field_validator
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.rate_limiters import InMemoryRateLimiter
 import opik
-from langchain.tools import tool
-from langchain.agents import create_agent
-
+from langchain_core.tools import tool
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from data_services import get_tasks, get_user_info, get_task_by_id, get_schedule
-
+import re
 load_dotenv()
 
 class SingleTask(BaseModel):
     """Information of a schedule unit, including a task and the time to do the task"""
-    date: date_type = Field(description="The date to do the task, with the format: DD/MM/YYYY")
+    date: date_type = Field(description="The date to do the task, with the format: YYYY-MM-DD")
     start_time: time = Field(description="The time to start doing the task, with format: HH:MM")
     end_time: time = Field(description="The time to stop doing the task, with format: HH:MM")
     task_id: int = Field(description="The task's id")
@@ -24,15 +23,31 @@ class SingleTask(BaseModel):
     @field_validator("date", mode="before")
     @classmethod
     def parse_date(cls, v):
+        if isinstance(v, (datetime, date_type)):
+            return v if isinstance(v, date_type) else v.date()
+        
         if isinstance(v, str):
-            return datetime.strptime(v, "%d/%m/%Y").date()
+            match_iso = re.match(r'^(\d{4})-(\d{2})-(\d{2})', v)
+            if match_iso:
+                return date_type(int(match_iso.group(1)), int(match_iso.group(2)), int(match_iso.group(3)))
+            
+            for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+                try:
+                    return datetime.strptime(v, fmt).date()
+                except ValueError:
+                    continue
         return v
 
     @field_validator("start_time", "end_time", mode="before")
     @classmethod
     def parse_time(cls, v):
+        if isinstance(v, (time, datetime)):
+            return v if isinstance(v, time) else v.time()
+        
         if isinstance(v, str):
-            return datetime.strptime(v, "%H:%M").time()
+            match = re.search(r'(\d{1,2}):(\d{2})', v)
+            if match:
+                return time(hour=int(match.group(1)), minute=int(match.group(2)))
         return v
 
 class ScheduleOutput(BaseModel):
@@ -47,13 +62,19 @@ gemini_model = ChatGoogleGenerativeAI(
 )
 def get_current_date():
     now = datetime.now()
-    return now.strftime("%d/%m/%Y")
+    return now.strftime("%Y-%m-%d")
 
 @tool
-@opik.track(name="get_weekday")
 def get_weekday(date_str: str) -> str:
-    """Return weekday of a date in DD/MM/YYYY format"""
-    dt = datetime.strptime(date_str, "%d/%m/%Y")
+    """Return weekday of a date. Input date_str MUST be in YYYY-MM-DD format."""
+    try:
+        dt = datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:
+        try:
+            dt = datetime.strptime(date_str, "%d/%m/%Y")
+        except ValueError:
+            return "Invalid date format. Please use YYYY-MM-DD."
+            
     return dt.strftime("%A")
 
 async def get_data(cookies: dict):
@@ -68,11 +89,14 @@ async def get_data_schedule_1_task(cookies: dict, task_id: int):
     schedule = await get_schedule(cookies)
     return {"new_task": task, "user_info": user_info, "existed_schedule": schedule}
 
-schedule_agent = create_agent(
-    model=gemini_model,
-    tools=[get_weekday],
-    response_format=ScheduleOutput  
-)
+tools = [get_weekday]
+llm_with_tools = gemini_model.bind_tools(tools)
+structured_llm = llm_with_tools.with_structured_output(ScheduleOutput)
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "{system_instruction}"),
+    MessagesPlaceholder(variable_name="messages"),
+])
+schedule_chain = prompt | structured_llm
 
 @opik.track(name="schedule")
 async def organize_schedule(cookies: dict):
@@ -86,7 +110,7 @@ async def organize_schedule(cookies: dict):
         Step 3: Distribute tasks based on their nature described in input data.
         Step 4: Double-check if the total hours for tasks are sufficient (at least equal to the input working hours).
     3. Output Data Formatting Rules:
-        - Dates: MUST be in 'YYYY-MM-DD' or 'DD/MM/YYYY' format.
+        - Dates: MUST be in 'YYYY-MM-DD' format ONLY (e.g., '2026-02-12'). Do not use 'DD/MM/YYYY'.
         - Times: MUST be in 'HH:MM' format (24-hour clock, e.g., 08:30, 15:45).
         - Consistency: Ensure start_time is always before end_time for the same task.
         - Structure: Your response must strictly follow the ScheduleOutput schema.
@@ -94,23 +118,17 @@ async def organize_schedule(cookies: dict):
     
     input_data = await get_data(cookies)
     input_data_str = json.dumps(input_data, ensure_ascii=False, indent=2)
-    
-    messages = [
-        {"role": "system", "content": system_instruction},
-        {
-            "role": "user", 
-            "content": f"Today is {get_current_date()}. Read information of me and my tasks, then generate appropriate schedule.\n"
+    user_message = {
+        "role": "user", 
+        "content": f"Today is {get_current_date()}. Read information of me and my tasks, then generate appropriate schedule.\n"
                         f"My information and tasks: \n{input_data_str}\n"
-        }
-    ]
+    }
 
-    result = await schedule_agent.ainvoke({"messages": messages})
-  
-    final_output = result.get("structured_response") or result.get("output")
-    
-    if isinstance(final_output, ScheduleOutput):
-        return final_output.model_dump()["tasks"]
-    return final_output 
+    result = await schedule_chain.ainvoke({
+        "system_instruction": system_instruction,
+        "messages": [user_message]
+    })
+    return result.tasks
 
 @opik.track(name="schedule_1_task")
 async def orgranize_schedule_1_task(cookies: dict, task_id: int):
@@ -125,7 +143,7 @@ async def orgranize_schedule_1_task(cookies: dict, task_id: int):
         Step 3: Distribute the task based on its nature described in input data.
         Step 4: Double-check if the total hours for tasks are sufficient (at least equal to the input working hours).
     3. Output Data Formatting Rules:
-        - Dates: MUST be in 'YYYY-MM-DD' or 'DD/MM/YYYY' format.
+        - Dates: MUST be in 'YYYY-MM-DD' format ONLY (e.g., '2026-02-12'). Do not use 'DD/MM/YYYY'.
         - Times: MUST be in 'HH:MM' format (24-hour clock, e.g., 08:30, 15:45).
         - Consistency: Ensure start_time is always before end_time for the same task.
         - Structure: Your response must strictly follow the ScheduleOutput schema.
@@ -134,23 +152,18 @@ async def orgranize_schedule_1_task(cookies: dict, task_id: int):
     
     input_data = await get_data_schedule_1_task(cookies, task_id)
     input_data_str = json.dumps(input_data, ensure_ascii=False, indent=2)
-    
-    messages = [
-        {"role": "system", "content": system_instruction},
-        {
-            "role": "user", 
+    user_message = {
+        "role": "user", 
             "content": f"Today is {get_current_date()}. Read information of me, my new task, and my existed schedules, then generate appropriate schedule for my new task.\n"
                         f"My information and tasks: \n{input_data_str}\n"
-        }
-    ]
+    }
 
-    result: ScheduleOutput = await schedule_agent.ainvoke({"messages": messages})
-  
-    final_output = result.get("structured_response") or result.get("output")
-    
-    if isinstance(final_output, ScheduleOutput):
-        return final_output.model_dump()["tasks"]
-    return final_output 
+    result = await schedule_chain.ainvoke({
+        "system_instruction": system_instruction,
+        "messages": [user_message]
+    })
+
+    return result.tasks 
 
 class TimePrediction(BaseModel):
     hours: int = Field(description="The predicted working hours as an integer")
